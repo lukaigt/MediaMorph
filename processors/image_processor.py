@@ -737,27 +737,27 @@ class ImageProcessor:
         variations = {
             'tiktok': {
                 'type': variation_seed % 5,
-                'intensity': random.uniform(0.7, 0.95),
-                'noise_level': random.randint(15, 35),
-                'color_shift': random.uniform(0.02, 0.08),
-                'frequency_bands': random.choice(['low', 'mid', 'high', 'mixed']),
-                'perturbation_strength': random.uniform(0.1, 0.3)
+                'intensity': random.uniform(0.15, 0.35),  # Much more subtle
+                'noise_level': random.randint(3, 8),      # Barely perceptible noise
+                'color_shift': random.uniform(0.005, 0.015), # Micro color shifts
+                'frequency_bands': random.choice(['low', 'mid', 'mixed']),
+                'perturbation_strength': random.uniform(0.02, 0.06)  # Very subtle
             },
             'instagram': {
                 'type': variation_seed % 4,
-                'intensity': random.uniform(0.6, 0.9),
-                'noise_level': random.randint(12, 28),
-                'color_shift': random.uniform(0.03, 0.09),
-                'frequency_bands': random.choice(['low', 'mid', 'mixed']),
-                'perturbation_strength': random.uniform(0.08, 0.25)
+                'intensity': random.uniform(0.12, 0.28),  # Subtle
+                'noise_level': random.randint(2, 6),      # Minimal noise
+                'color_shift': random.uniform(0.008, 0.018),
+                'frequency_bands': random.choice(['low', 'mid']),
+                'perturbation_strength': random.uniform(0.015, 0.05)
             },
             'youtube': {
                 'type': variation_seed % 4,
-                'intensity': random.uniform(0.65, 0.88),
-                'noise_level': random.randint(10, 25),
-                'color_shift': random.uniform(0.02, 0.07),
-                'frequency_bands': random.choice(['mid', 'high', 'mixed']),
-                'perturbation_strength': random.uniform(0.05, 0.2)
+                'intensity': random.uniform(0.10, 0.25),  # Very subtle
+                'noise_level': random.randint(1, 5),      # Minimal noise
+                'color_shift': random.uniform(0.003, 0.012),
+                'frequency_bands': random.choice(['mid', 'mixed']),
+                'perturbation_strength': random.uniform(0.01, 0.04)
             }
         }
         
@@ -917,10 +917,10 @@ class ImageProcessor:
         local_mean = ndimage.uniform_filter(luminance, size=8)
         visual_mask = np.abs(luminance - local_mean) / (local_mean + 1)
         
-        # Apply adaptive modifications
+        # Apply very subtle adaptive modifications
         for c in range(3):
-            noise_strength = variation['noise_level'] * visual_mask / 255.0
-            channel_noise = np.random.normal(0, 1, img_array[:, :, c].shape) * noise_strength.reshape(luminance.shape)
+            noise_strength = variation['noise_level'] * visual_mask / 1000.0  # Much more subtle
+            channel_noise = np.random.normal(0, 0.5, img_array[:, :, c].shape) * noise_strength.reshape(luminance.shape)
             img_array[:, :, c] += channel_noise
         
         img_array = np.clip(img_array, 0, 255)
@@ -943,11 +943,11 @@ class ImageProcessor:
         yuv_img = yuv_matrix @ img_flat
         yuv_img = yuv_img.T.reshape(img_array.shape)
         
-        # Apply modifications in YUV space (more robust to compression)
-        if variation['intensity'] > 0.5:
+        # Apply very subtle modifications in YUV space (more robust to compression)
+        if variation['intensity'] > 0.1:
             # Modify U and V channels (chrominance) which are less perceptible
-            yuv_img[:, :, 1] += np.random.uniform(-2, 2, yuv_img[:, :, 1].shape) * variation['color_shift']
-            yuv_img[:, :, 2] += np.random.uniform(-2, 2, yuv_img[:, :, 2].shape) * variation['color_shift']
+            yuv_img[:, :, 1] += np.random.uniform(-0.5, 0.5, yuv_img[:, :, 1].shape) * variation['color_shift']
+            yuv_img[:, :, 2] += np.random.uniform(-0.5, 0.5, yuv_img[:, :, 2].shape) * variation['color_shift']
         
         # Convert back to RGB
         rgb_matrix = np.linalg.inv(yuv_matrix)
@@ -969,19 +969,19 @@ class ImageProcessor:
             # Micro-adjustments that survive compression
             adjustment_strength = variation['intensity'] * 0.1 * (iteration + 1)
             
-            # Apply different types of micro-adjustments
+            # Apply very subtle micro-adjustments
             if iteration == 0:
-                # Brightness micro-adjustments
-                img_array = img_array + np.random.uniform(-adjustment_strength, adjustment_strength, img_array.shape)
+                # Brightness micro-adjustments (barely noticeable)
+                img_array = img_array + np.random.uniform(-adjustment_strength*0.3, adjustment_strength*0.3, img_array.shape)
             elif iteration == 1:
-                # Contrast micro-adjustments
+                # Contrast micro-adjustments (very subtle)
                 mean_brightness = np.mean(img_array, axis=(0, 1), keepdims=True)
-                img_array = (img_array - mean_brightness) * (1 + adjustment_strength * 0.1) + mean_brightness
+                img_array = (img_array - mean_brightness) * (1 + adjustment_strength * 0.02) + mean_brightness
             else:
-                # Color balance micro-adjustments
-                img_array[:, :, 0] *= (1 + adjustment_strength * 0.05)
-                img_array[:, :, 1] *= (1 - adjustment_strength * 0.03)
-                img_array[:, :, 2] *= (1 + adjustment_strength * 0.02)
+                # Color balance micro-adjustments (imperceptible)
+                img_array[:, :, 0] *= (1 + adjustment_strength * 0.01)
+                img_array[:, :, 1] *= (1 - adjustment_strength * 0.01)
+                img_array[:, :, 2] *= (1 + adjustment_strength * 0.01)
         
         img_array = np.clip(img_array, 0, 255)
         return Image.fromarray(img_array.astype(np.uint8))
@@ -994,31 +994,31 @@ class ImageProcessor:
         # 3. Text/caption analysis
         # 4. Audio-visual synchronization
         
-        # Apply TikTok-specific modifications
+        # Apply very subtle TikTok-specific modifications
         enhancer = ImageEnhance.Color(img)
-        color_factor = 1.0 + (variation['color_shift'] * 2)  # TikTok likes vibrant colors
+        color_factor = 1.0 + (variation['color_shift'] * 0.5)  # Much more subtle color enhancement
         img = enhancer.enhance(color_factor)
         
-        # Apply subtle sharpening (TikTok algorithm prefers sharp content)
+        # Apply very subtle sharpening 
         enhancer = ImageEnhance.Sharpness(img)
-        sharpness_factor = 1.0 + (variation['intensity'] * 0.3)
+        sharpness_factor = 1.0 + (variation['intensity'] * 0.05)  # Barely noticeable
         img = enhancer.enhance(sharpness_factor)
         
-        # Apply micro-rotation to break pixel-level matching
-        rotation_angle = random.uniform(-0.3, 0.3) * variation['intensity']
+        # Apply micro-rotation to break pixel-level matching (imperceptible)
+        rotation_angle = random.uniform(-0.05, 0.05) * variation['intensity']  # Much smaller rotation
         img = img.rotate(rotation_angle, expand=False, fillcolor=(0, 0, 0))
         
-        # Apply final noise pattern specifically designed for TikTok's detection
+        # Apply very subtle noise pattern 
         img_array = np.array(img)
         
-        # TikTok-specific noise pattern (based on platform's compression characteristics)
-        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.5, img_array.shape)
+        # TikTok-specific noise pattern (much more subtle)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.1, img_array.shape)  # Much less noise
         
-        # Apply noise more heavily to edges (where TikTok's algorithm looks for features)
+        # Apply minimal noise strategically
         from scipy import ndimage
         edges = ndimage.sobel(np.mean(img_array, axis=2))
         edges_3d = np.stack([edges] * 3, axis=2)
-        adaptive_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.3)
+        adaptive_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.05)  # Much less adaptive noise
         
         img_array = img_array + adaptive_noise
         img_array = np.clip(img_array, 0, 255)
@@ -1099,15 +1099,15 @@ class ImageProcessor:
         contrast_factor = 1.0 + (variation['intensity'] * 0.2)
         img = enhancer.enhance(contrast_factor)
         
-        # Instagram-specific noise pattern
+        # Very subtle Instagram-specific noise pattern
         img_array = np.array(img)
-        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.3, img_array.shape)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.08, img_array.shape)  # Much less noise
         
-        # Apply noise with Instagram's characteristic pattern
+        # Apply minimal noise with Instagram's characteristic pattern
         from scipy import ndimage
         edges = ndimage.sobel(np.mean(img_array, axis=2))
         edges_3d = np.stack([edges] * 3, axis=2)
-        instagram_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.2)
+        instagram_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.03)  # Much less adaptive noise
         
         img_array = img_array + instagram_noise
         img_array = np.clip(img_array, 0, 255)
@@ -1140,15 +1140,15 @@ class ImageProcessor:
         img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
         img = img.rotate(rotation_angle, expand=False, fillcolor=(0, 0, 0))
         
-        # Final YouTube noise pattern (lower intensity, more strategic)
+        # Very subtle YouTube noise pattern 
         img_array = np.array(img)
-        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.2, img_array.shape)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.05, img_array.shape)  # Minimal noise
         
-        # Apply noise strategically in areas YouTube algorithm examines
+        # Apply minimal strategic noise
         from scipy import ndimage
         edges = ndimage.sobel(np.mean(img_array, axis=2))
         edges_3d = np.stack([edges] * 3, axis=2)
-        youtube_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.15)
+        youtube_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.02)  # Very minimal adaptive noise
         
         img_array = img_array + youtube_noise
         img_array = np.clip(img_array, 0, 255)
