@@ -55,104 +55,31 @@ class VideoProcessor:
             input_stream = ffmpeg.input(input_path)
             self.update_progress(50, "Building advanced filter chain...")
             
-            # === LAYER 1: ADVANCED TEMPORAL DOMAIN MANIPULATION ===
-            self.update_progress(52, "Applying temporal domain manipulation...")
+            # === LAYER 1: SIMPLIFIED ALGORITHM EVASION ===
+            self.update_progress(52, "Applying algorithm evasion techniques...")
             video = input_stream.video
             
-            # Micro frame timing adjustments (imperceptible but breaks temporal fingerprints)
+            # Simple but effective temporal manipulation
             speed_factor = variation['speed_factor']
             video = video.filter('setpts', f'{speed_factor}*PTS')
             
-            # Frame duplication/deletion for temporal evasion (imperceptible at 30fps)
-            if variation.get('frame_manipulation', False):
-                # Randomly duplicate or skip frames to break temporal patterns
-                video = video.filter('framestep', step=variation['frame_step'])
-                # Re-interpolate to maintain smooth playback
-                video = video.filter('minterpolate', fps=variation['target_fps'], mi_mode='mci', mc_mode='aobmc')
-            
-            # Advanced frame interpolation with motion compensation
-            elif variation.get('use_frame_interpolation', False):
-                video = video.filter('minterpolate', 
-                    fps=variation['target_fps'], 
-                    mi_mode='mci', 
-                    mc_mode='aobmc',
-                    me_mode='bidir',
-                    vsbmc=1)  # Advanced motion estimation
-            
-            # === LAYER 2: ADVANCED SPATIAL DOMAIN EVASION ===
-            # Dynamic zoom with sine wave micro-variations
+            # === LAYER 2: RELIABLE SPATIAL EVASION ===
+            self.update_progress(54, "Processing spatial transformations...")
+            # Simple zoom for algorithm evasion
             zoom_factor = variation['zoom_factor']
-            video = video.filter('zoompan', 
-                zoom=f"{zoom_factor}+0.001*sin(2*PI*t/{variation['zoom_period']})", 
-                x='iw/2-(iw/zoom/2)', 
-                y='ih/2-(ih/zoom/2)', 
-                d=1)
+            video = video.filter('scale', f'iw*{zoom_factor}', f'ih*{zoom_factor}')
             
-            # Optical flow disruption (breaks motion-based detection)
-            if variation.get('optical_flow_disruption', False):
-                # Apply subtle motion vector modifications
-                video = video.filter('vidstabdetect', stepsize=variation['flow_stepsize'], shakiness=1, accuracy=15)
-                video = video.filter('vidstabtransform', 
-                    smoothing=variation['flow_smoothing'], 
-                    maxshift=variation['flow_maxshift'],
-                    maxangle=variation['flow_maxangle'])
-            
-            # Advanced geometric transformations
-            if variation.get('apply_perspective', False):
-                video = video.filter('perspective', 
-                    x0=variation['perspective']['x0'], y0=variation['perspective']['y0'],
-                    x1=variation['perspective']['x1'], y1=variation['perspective']['y1'],
-                    x2=variation['perspective']['x2'], y2=variation['perspective']['y2'],
-                    x3=variation['perspective']['x3'], y3=variation['perspective']['y3'])
-            
-            # Lens distortion simulation (breaks geometric fingerprints)
-            if variation.get('lens_distortion', False):
-                video = video.filter('lenscorrection', 
-                    cx=variation['lens_cx'], cy=variation['lens_cy'],
-                    k1=variation['lens_k1'], k2=variation['lens_k2'])
-            
-            # === LAYER 3: FREQUENCY DOMAIN MANIPULATION ===
-            # Advanced color space transformations
+            # === LAYER 3: ESSENTIAL ALGORITHM EVASION ===
+            self.update_progress(56, "Processing color and quality adjustments...")
+            # Simple but effective color adjustments for algorithm evasion
             video = video.filter('eq', 
                 brightness=variation['brightness'], 
                 contrast=variation['contrast'], 
-                saturation=variation['saturation'],
-                gamma=variation['gamma'])
+                saturation=variation['saturation'])
             
-            # DCT-inspired frequency domain modifications
-            video = video.filter('unsharp', 
-                luma_msize_x=variation['unsharp_size'], 
-                luma_msize_y=variation['unsharp_size'], 
-                luma_amount=variation['unsharp_amount'])
-            
-            # === LAYER 4: NOISE INJECTION SYSTEM ===
-            self.update_progress(58, "Injecting algorithmic noise patterns...")
-            # Multi-layered noise for maximum algorithm confusion
-            # Temporal noise (changes over time)
-            video = video.filter('noise', alls=variation['noise_level'], allf='t+u')
-            
-            # Content-adaptive noise (stronger in edges, weaker in smooth areas)
-            if variation.get('adaptive_noise', False):
-                video = video.filter('convolution', 
-                    '1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1')
-            
-            # === LAYER 5: PIXEL-LEVEL DISRUPTION ===
-            self.update_progress(62, "Applying pixel-level algorithm disruption...")
-            # Micro-blur with temporal variation
-            blur_radius = f"{variation['blur_radius']}+{variation['blur_variation']}*sin(2*PI*t/{variation['blur_period']})"
-            video = video.filter('boxblur', luma_radius=blur_radius, luma_power=1)
-            
-            # Color channel mixing (advanced steganography-inspired) - FIXED TO PRESERVE COLOR
-            # Only apply subtle mixing that doesn't destroy color
-            if platform == 'youtube':
-                # YouTube: Skip channel mixing to preserve color
-                pass  
-            else:
-                # TikTok/Instagram: Apply subtle channel mixing
-                video = video.filter('colorchannelmixer', 
-                    rr=variation['channel_mix']['rr'], rg=variation['channel_mix']['rg'], rb=variation['channel_mix']['rb'],
-                    gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
-                    br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
+            # Light noise for algorithm confusion (reduced complexity)
+            self.update_progress(58, "Adding subtle algorithm disruption...")
+            video = video.filter('noise', alls=10, allf='t')
             
             # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
             self.update_progress(60, "Processing audio streams...")
@@ -181,34 +108,20 @@ class VideoProcessor:
             
             # === LAYER 7: HIGH-QUALITY 1080P60 ENCODING WITH ANTI-ALGORITHM METADATA ===
             self.update_progress(65, "Preparing ultra-high quality 1080p60 encoding...")
-            # Ultra-high quality settings optimized for platform algorithms while maintaining evasion
+            # Simplified ultra-high quality settings that work reliably
             encoding_params = {
-                'acodec': 'aac',
                 'vcodec': 'libx264', 
-                'crf': 16,  # Ultra-high quality (was random 20-24)
-                'preset': 'slow',  # High-quality encoding for maximum detail
-                'profile:v': 'high',  # Best compression efficiency
-                'level': '4.2',  # Supports 1080p60 high bitrate
-                'b:v': '12M',  # Ultra-high bitrate for crisp quality
-                'r': 60,  # Force 60fps output
-                's': '1920x1080',  # Force 1080p resolution
-                'b:a': '320k',  # Maximum audio quality
-                'movflags': '+faststart',  # Optimize for streaming
+                'crf': 16,  # Ultra-high quality
+                'preset': 'slow',  # Maximum quality
+                'b:v': '12M',  # Ultra-high bitrate
+                'r': 60,  # Force 60fps
+                's': '1920x1080',  # Force 1080p
                 'pix_fmt': 'yuv420p'  # Universal compatibility
             }
             
-            # === LAYER 8: SINGLE-STAGE ENCODING (AUDIO PRESERVATION) ===
-            # Direct encoding to preserve audio properly
+            # === LAYER 8: SIMPLIFIED HIGH-QUALITY ENCODING ===
+            # Simplified parameters to avoid encoding failures
             final_params = encoding_params.copy()
-            final_params.update({
-                'g': variation['keyframe_interval'],  # Custom keyframe interval
-                'sc_threshold': variation['scene_threshold'],  # Scene change detection
-                'keyint_min': variation['min_keyframe_interval'],
-                'x264opts': f"keyint={variation['final_keyframe_interval']}:min-keyint={variation['final_min_keyframe']}:bframes={variation['b_frames']}",
-                'bf': variation['b_frames'],  # B-frame count
-                'refs': variation['ref_frames'],  # Reference frame count
-                'metadata': f"creation_time={variation['fake_creation_time']}"
-            })
             
             # Add audio parameters only if audio exists
             if has_audio and audio is not None:
@@ -261,7 +174,8 @@ class VideoProcessor:
                         (
                             ffmpeg
                             .output(input_stream.video, input_stream.audio, output_path, 
-                                   vcodec='libx264', acodec='copy', crf=23)
+                                   vcodec='libx264', acodec='copy', crf=16, preset='slow',
+                                   **{'b:v': '12M', 'r': 60, 's': '1920x1080'})
                             .overwrite_output()
                             .run(quiet=False)
                         )
@@ -269,7 +183,9 @@ class VideoProcessor:
                         print("Attempting fallback encoding without audio...")
                         (
                             ffmpeg
-                            .output(input_stream.video, output_path, vcodec='libx264', crf=23)
+                            .output(input_stream.video, output_path, 
+                                   vcodec='libx264', crf=16, preset='slow',
+                                   **{'b:v': '12M', 'r': 60, 's': '1920x1080'})
                             .overwrite_output()
                             .run(quiet=False)
                         )
