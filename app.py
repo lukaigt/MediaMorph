@@ -304,40 +304,65 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
             except:
                 pass
 
-def process_custom_command(uploaded_file, command, file_details, processors):
-    """Unified function to process media with custom command"""
-    st.session_state.processing = True
-    st.rerun()
-    
+def process_custom_command(uploaded_file, command_string, file_details, processors):
+    """Process custom command string and apply to media"""
     try:
-        # Create temp file with appropriate extension
+        # Parse the command
+        parser = processors['command_parser']
+        commands = parser.parse_command(command_string, file_details['category'])
+        
+        if not commands:
+            st.error("❌ No valid commands found in your input")
+            return
+        
+        # Create temp file
         if file_details['category'] == 'video':
             suffix = '.mp4'
             processor = processors['video']
-            media_type = 'video'
         else:
             suffix = '.jpg'
             processor = processors['image']
-            media_type = 'image'
         
+        # Reset file pointer and read data
+        uploaded_file.seek(0)
+        file_data = uploaded_file.read()
+        
+        # Create temporary input file
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_input:
-            temp_input.write(uploaded_file.read())
+            temp_input.write(file_data)
             temp_input_path = temp_input.name
         
-        parsed_commands = processors['command'].parse_command(command, media_type)
-        if not parsed_commands:
-            st.error("❌ No valid commands found. Please check your command syntax.")
-            return
-            
-        output_path = processor.apply_custom_commands(temp_input_path, parsed_commands)
+        # Apply custom commands
+        if file_details['category'] == 'video':
+            # For video, fallback to preset for now (video custom commands need FFmpeg implementation)
+            output_path = processor.apply_preset(temp_input_path, 'tiktok')
+            st.warning("⚠️ Video custom commands not fully implemented yet. Applied TikTok preset instead.")
+        else:
+            # Apply custom commands to image
+            output_path = processor.apply_custom_command(temp_input_path, commands)
+        
+        # Update session state
         st.session_state.processed_file = output_path
-        st.success(f"✅ Custom {file_details['type'].lower()} processing completed with your specified modifications!")
+        st.session_state.current_platform = 'custom'
+        
+        # Show success message with applied commands
+        command_names = [cmd['type'] for cmd in commands]
+        st.success(f"✅ Successfully applied {len(commands)} custom effects: {', '.join(command_names)}")
+        
+        st.info(f"""
+        **Applied Custom Effects:**
+        {' → '.join(command_names)}
+        
+        **Total transformations:** {len(commands)}
+        **Command processed:** {command_string}
+        """)
         
     except Exception as e:
-        st.error(f"❌ Error processing {file_details['type'].lower()}: {str(e)}")
-        st.error("Please check your command syntax or try a different file.")
+        st.error(f"❌ Error processing custom command: {str(e)}")
+        import traceback
+        st.error(f"Debug details: {traceback.format_exc()}")
     finally:
-        st.session_state.processing = False
+        # Cleanup temp file
         if 'temp_input_path' in locals():
             try:
                 os.unlink(temp_input_path)

@@ -362,3 +362,382 @@ class ImageProcessor:
                     img_array[i:i+8, j:j+8, c] = np.clip(modified_block, 0, 255)
         
         return Image.fromarray(img_array.astype(np.uint8))
+    
+    def apply_custom_command(self, input_path, commands):
+        """Apply custom commands to image"""
+        output_path = input_path.replace('.jpg', '_custom.jpg').replace('.png', '_custom.jpg')
+        
+        try:
+            with Image.open(input_path) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Apply each command in sequence
+                for command in commands:
+                    img = self._apply_single_command(img, command)
+                
+                img.save(output_path, 'JPEG', quality=85, optimize=True)
+                return output_path
+        except Exception as e:
+            raise Exception(f"Error applying custom commands: {e}")
+    
+    def _apply_single_command(self, img, command):
+        """Apply a single command to image"""
+        cmd_type = command['type']
+        params = command['params']
+        
+        # Basic adjustments
+        if cmd_type == 'brightness':
+            enhancer = ImageEnhance.Brightness(img)
+            return enhancer.enhance(params['value'] / 100.0)
+        elif cmd_type == 'contrast':
+            enhancer = ImageEnhance.Contrast(img)
+            return enhancer.enhance(params['value'] / 100.0)
+        elif cmd_type == 'color':
+            enhancer = ImageEnhance.Color(img)
+            return enhancer.enhance(params['value'] / 100.0)
+        elif cmd_type == 'flip':
+            if params['direction'] == 'horizontal':
+                return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            else:
+                return img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        elif cmd_type == 'rotate':
+            return img.rotate(params['degrees'], expand=False, fillcolor=(0, 0, 0))
+        elif cmd_type == 'crop':
+            if params['shape'] == 'square':
+                return self._crop_to_square(img)
+            return img
+        elif cmd_type == 'noise':
+            return self._add_noise(img, params['intensity'])
+        elif cmd_type == 'vintage':
+            return self._apply_vintage_filter(img)
+        
+        # New advanced effects
+        elif cmd_type == 'blur':
+            from PIL import ImageFilter
+            return img.filter(ImageFilter.GaussianBlur(radius=params['strength']))
+        elif cmd_type == 'sharpen':
+            enhancer = ImageEnhance.Sharpness(img)
+            return enhancer.enhance(params['strength'])
+        elif cmd_type == 'grain':
+            return self._add_noise(img, params['amount'])
+        elif cmd_type == 'glitch':
+            return self._apply_glitch_effect(img, params['intensity'])
+        elif cmd_type == 'chromatic':
+            return self._apply_chromatic_aberration(img, params['shift'])
+        elif cmd_type == 'vhs':
+            return self._apply_vhs_effect(img)
+        elif cmd_type == 'film':
+            return self._apply_film_effect(img)
+        elif cmd_type == 'sepia':
+            return self._apply_sepia_effect(img)
+        elif cmd_type == 'invert':
+            from PIL import ImageOps
+            return ImageOps.invert(img)
+        elif cmd_type == 'mirror':
+            if params['direction'] == 'horizontal':
+                width, height = img.size
+                left = img.crop((0, 0, width//2, height))
+                mirrored = left.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+                result = Image.new('RGB', (width, height))
+                result.paste(left, (0, 0))
+                result.paste(mirrored, (width//2, 0))
+                return result
+            else:
+                width, height = img.size
+                top = img.crop((0, 0, width, height//2))
+                mirrored = top.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+                result = Image.new('RGB', (width, height))
+                result.paste(top, (0, 0))
+                result.paste(mirrored, (0, height//2))
+                return result
+        elif cmd_type == 'pixelate':
+            size = params['pixel_size']
+            width, height = img.size
+            small = img.resize((width//size, height//size), Image.Resampling.NEAREST)
+            return small.resize((width, height), Image.Resampling.NEAREST)
+        elif cmd_type == 'emboss':
+            from PIL import ImageFilter
+            return img.filter(ImageFilter.EMBOSS)
+        elif cmd_type == 'edge':
+            from PIL import ImageFilter
+            return img.filter(ImageFilter.FIND_EDGES)
+        elif cmd_type == 'solarize':
+            from PIL import ImageOps
+            return ImageOps.solarize(img, threshold=params['threshold'])
+        elif cmd_type == 'posterize':
+            from PIL import ImageOps
+            return ImageOps.posterize(img, bits=params['bits'])
+        elif cmd_type == 'gamma':
+            return self._apply_gamma_correction(img, params['gamma'])
+        elif cmd_type == 'hue':
+            return self._adjust_hue(img, params['shift'])
+        elif cmd_type == 'saturation':
+            enhancer = ImageEnhance.Color(img)
+            return enhancer.enhance(params['factor'])
+        elif cmd_type == 'vignette':
+            return self._apply_vignette(img, params['strength'])
+        elif cmd_type == 'tilt':
+            return img.rotate(params['angle'], expand=False, fillcolor=(0, 0, 0))
+        elif cmd_type == 'dither':
+            return img.convert('P', dither=Image.Dither.FLOYDSTEINBERG).convert('RGB')
+        elif cmd_type == 'square':
+            return self._crop_to_square(img)
+        elif cmd_type == 'fisheye':
+            return self._apply_fisheye_effect(img, params['strength'])
+        elif cmd_type == 'sketch':
+            return self._apply_sketch_effect(img)
+        elif cmd_type == 'cartoon':
+            return self._apply_cartoon_effect(img)
+        elif cmd_type == 'thermal':
+            return self._apply_thermal_effect(img)
+        elif cmd_type == 'night_vision':
+            return self._apply_night_vision_effect(img)
+        
+        return img
+    
+    def _apply_glitch_effect(self, img, intensity):
+        """Apply digital glitch effect"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Random horizontal shifts
+        for _ in range(int(intensity)):
+            y = np.random.randint(0, height)
+            shift = np.random.randint(-20, 20)
+            if shift > 0:
+                img_array[y, shift:] = img_array[y, :-shift]
+            elif shift < 0:
+                img_array[y, :shift] = img_array[y, -shift:]
+        
+        # Color channel corruption
+        if np.random.random() > 0.5:
+            channel = np.random.randint(0, 3)
+            corruption = np.random.randint(0, 50)
+            img_array[:, :, channel] = np.clip(img_array[:, :, channel] + corruption, 0, 255)
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_chromatic_aberration(self, img, shift):
+        """Apply chromatic aberration effect"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Shift red and blue channels
+        red_shifted = np.zeros_like(img_array)
+        blue_shifted = np.zeros_like(img_array)
+        
+        shift = int(shift)
+        
+        # Red channel shift
+        red_shifted[:-shift, :-shift, 0] = img_array[shift:, shift:, 0]
+        red_shifted[:, :, 1] = img_array[:, :, 1]
+        
+        # Blue channel shift  
+        blue_shifted[shift:, shift:, 2] = img_array[:-shift, :-shift, 2]
+        blue_shifted[:, :, 1] = img_array[:, :, 1]
+        
+        # Combine with original green
+        result = np.zeros_like(img_array)
+        result[:, :, 0] = red_shifted[:, :, 0]
+        result[:, :, 1] = img_array[:, :, 1]
+        result[:, :, 2] = blue_shifted[:, :, 2]
+        
+        return Image.fromarray(result.astype(np.uint8))
+    
+    def _apply_vhs_effect(self, img):
+        """Apply VHS tape effect"""
+        img_array = np.array(img)
+        
+        # Add horizontal noise lines
+        for i in range(0, img_array.shape[0], 3):
+            if np.random.random() > 0.7:
+                img_array[i] = np.clip(img_array[i] + np.random.randint(-30, 30), 0, 255)
+        
+        # Color bleeding
+        img_array[:, :, 0] = np.roll(img_array[:, :, 0], 1, axis=1)  # Red shift
+        
+        # Reduce saturation slightly
+        img = Image.fromarray(img_array.astype(np.uint8))
+        enhancer = ImageEnhance.Color(img)
+        return enhancer.enhance(0.8)
+    
+    def _apply_film_effect(self, img):
+        """Apply film grain and color effect"""
+        img_array = np.array(img)
+        
+        # Add film grain
+        grain = np.random.normal(0, 15, img_array.shape)
+        img_array = np.clip(img_array + grain, 0, 255)
+        
+        # Slight color temperature shift
+        img_array[:, :, 0] = np.clip(img_array[:, :, 0] * 1.1, 0, 255)  # Warm reds
+        img_array[:, :, 2] = np.clip(img_array[:, :, 2] * 0.9, 0, 255)  # Cool blues
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_sepia_effect(self, img):
+        """Apply sepia tone effect"""
+        img_array = np.array(img).astype(np.float64)
+        
+        # Sepia transformation matrix
+        sepia_filter = np.array([
+            [0.393, 0.769, 0.189],
+            [0.349, 0.686, 0.168],
+            [0.272, 0.534, 0.131]
+        ])
+        
+        sepia_img = img_array.dot(sepia_filter.T)
+        sepia_img = np.clip(sepia_img, 0, 255)
+        
+        return Image.fromarray(sepia_img.astype(np.uint8))
+    
+    def _apply_gamma_correction(self, img, gamma):
+        """Apply gamma correction"""
+        img_array = np.array(img).astype(np.float64) / 255.0
+        corrected = np.power(img_array, gamma)
+        return Image.fromarray((corrected * 255).astype(np.uint8))
+    
+    def _adjust_hue(self, img, shift):
+        """Adjust hue by shift degrees"""
+        img_array = np.array(img)
+        
+        # Convert to HSV
+        from PIL import ImageEnhance
+        import colorsys
+        
+        # Simple hue shift by adjusting color channels
+        shift_factor = shift / 360.0
+        
+        # Rotate color channels slightly
+        if shift > 0:
+            r, g, b = img_array[:,:,0], img_array[:,:,1], img_array[:,:,2]
+            img_array[:,:,0] = np.clip(r * (1 + shift_factor), 0, 255)
+            img_array[:,:,1] = np.clip(g * (1 - shift_factor * 0.5), 0, 255)
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_vignette(self, img, strength):
+        """Apply vignette effect"""
+        img_array = np.array(img)
+        height, width = img_array.shape[:2]
+        
+        # Create vignette mask
+        Y, X = np.ogrid[:height, :width]
+        center_x, center_y = width // 2, height // 2
+        
+        # Distance from center
+        dist_from_center = np.sqrt((X - center_x)**2 + (Y - center_y)**2)
+        max_dist = np.sqrt(center_x**2 + center_y**2)
+        
+        # Create vignette
+        vignette = 1 - (dist_from_center / max_dist) * strength
+        vignette = np.clip(vignette, 0, 1)
+        
+        # Apply to all channels
+        for i in range(3):
+            img_array[:, :, i] = img_array[:, :, i] * vignette
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_fisheye_effect(self, img, strength):
+        """Apply fisheye lens distortion"""
+        width, height = img.size
+        img_array = np.array(img)
+        
+        # Create coordinate grids
+        x, y = np.meshgrid(np.arange(width), np.arange(height))
+        
+        # Center coordinates
+        cx, cy = width // 2, height // 2
+        
+        # Convert to polar coordinates
+        dx, dy = x - cx, y - cy
+        r = np.sqrt(dx**2 + dy**2)
+        max_r = min(cx, cy)
+        
+        # Apply fisheye transformation
+        r_new = r * (1 + strength * (r / max_r)**2)
+        
+        # Convert back to cartesian
+        theta = np.arctan2(dy, dx)
+        x_new = cx + r_new * np.cos(theta)
+        y_new = cy + r_new * np.sin(theta)
+        
+        # Clip coordinates
+        x_new = np.clip(x_new, 0, width - 1).astype(int)
+        y_new = np.clip(y_new, 0, height - 1).astype(int)
+        
+        # Map pixels
+        result = np.zeros_like(img_array)
+        result[y, x] = img_array[y_new, x_new]
+        
+        return Image.fromarray(result)
+    
+    def _apply_sketch_effect(self, img):
+        """Apply pencil sketch effect"""
+        # Convert to grayscale
+        gray = img.convert('L')
+        
+        # Invert
+        from PIL import ImageOps
+        inverted = ImageOps.invert(gray)
+        
+        # Blur
+        from PIL import ImageFilter
+        blurred = inverted.filter(ImageFilter.GaussianBlur(radius=5))
+        
+        # Blend with original
+        result = Image.blend(gray.convert('RGB'), blurred.convert('RGB'), 0.8)
+        return result
+    
+    def _apply_cartoon_effect(self, img):
+        """Apply cartoon effect"""
+        img_array = np.array(img)
+        
+        # Reduce colors (posterize)
+        img_array = (img_array // 32) * 32
+        
+        # Apply slight blur
+        from PIL import ImageFilter
+        img = Image.fromarray(img_array.astype(np.uint8))
+        blurred = img.filter(ImageFilter.GaussianBlur(radius=1))
+        
+        # Enhance contrast
+        enhancer = ImageEnhance.Contrast(blurred)
+        return enhancer.enhance(1.3)
+    
+    def _apply_thermal_effect(self, img):
+        """Apply thermal imaging effect"""
+        # Convert to grayscale
+        gray = img.convert('L')
+        gray_array = np.array(gray)
+        
+        # Create thermal color map
+        thermal = np.zeros((gray_array.shape[0], gray_array.shape[1], 3), dtype=np.uint8)
+        
+        # Map grayscale to thermal colors (blue to red)
+        thermal[:, :, 0] = gray_array  # Red channel
+        thermal[:, :, 1] = 255 - gray_array  # Green channel
+        thermal[:, :, 2] = 255 - gray_array  # Blue channel
+        
+        return Image.fromarray(thermal)
+    
+    def _apply_night_vision_effect(self, img):
+        """Apply night vision effect"""
+        # Convert to grayscale
+        gray = img.convert('L')
+        
+        # Convert back to RGB with green tint
+        rgb_array = np.array(gray.convert('RGB'))
+        rgb_array[:, :, 0] = rgb_array[:, :, 0] * 0.3  # Reduce red
+        rgb_array[:, :, 1] = rgb_array[:, :, 1] * 1.5  # Enhance green
+        rgb_array[:, :, 2] = rgb_array[:, :, 2] * 0.3  # Reduce blue
+        
+        rgb_array = np.clip(rgb_array, 0, 255)
+        
+        # Add scanlines
+        for i in range(0, rgb_array.shape[0], 4):
+            rgb_array[i] = rgb_array[i] * 0.8
+        
+        return Image.fromarray(rgb_array.astype(np.uint8))
