@@ -213,6 +213,7 @@ class VideoProcessor:
                 'crf': variation['final_crf'],
                 'preset': variation['final_preset'],
                 'profile:v': variation['final_profile'],
+                'b:a': variation['audio_bitrate'],  # CRITICAL: Audio bitrate for final stage
                 'movflags': '+faststart',
                 'metadata': f"creation_time={variation['fake_creation_time']}",
                 # Advanced compression settings
@@ -235,31 +236,7 @@ class VideoProcessor:
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in TikTok preset: {e}")
-            audio = audio.filter('aresample', 44100)  # Return to standard rate
             
-            # Stage 2: Audio frequency band manipulation
-            audio = audio.filter('equalizer', f=variation['eq_frequency'], width_type='h', width=2, g=variation['eq_gain'])
-            
-            # Stage 3: Micro-volume adjustments for audio fingerprint evasion
-            audio = audio.filter('volume', variation['volume_factor'])
-            
-            # Dynamic output settings to prevent encoding pattern detection
-            output_settings = {
-                'acodec': 'aac',
-                'vcodec': 'libx264', 
-                'crf': variation['crf'],
-                'b:v': variation['bitrate'],
-                'b:a': variation['audio_bitrate']
-            }
-            
-            # Combine video and audio with dynamic settings
-            (
-                ffmpeg
-                .output(video, audio, output_path, **output_settings)
-                .overwrite_output()
-                .run(quiet=True)
-            )
-            return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in TikTok advanced preset: {e}")
     
@@ -278,7 +255,7 @@ class VideoProcessor:
                 .filter('colorbalance', rm=0.05, gm=-0.03, bm=0.02)  # Color balance
                 .filter('eq', saturation=1.4)  # Enhanced saturation instead of vibrance
                 .filter('scale', 'iw*0.999', 'ih*0.999')  # Tiny scale change
-                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M'})
+                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M', 'b:a': '192k'})
                 .overwrite_output()
                 .run(quiet=True)
             )
@@ -301,7 +278,7 @@ class VideoProcessor:
                 .filter('colorbalance', rs=-0.02, gs=0.03, bs=-0.01)  # Color balance
                 .filter('eq', gamma=0.95)  # Gamma adjustment instead of curves
                 .filter('scale', 'iw*1.001', 'ih*1.001')  # Minimal scale to change hash
-                .output(output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M'})
+                .output(output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M', 'b:a': '192k'})
                 .overwrite_output()
                 .run(quiet=True)
             )
