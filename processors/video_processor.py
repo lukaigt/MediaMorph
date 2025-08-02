@@ -56,6 +56,7 @@ class VideoProcessor:
             self.update_progress(50, "Building advanced filter chain...")
             
             # === LAYER 1: ADVANCED TEMPORAL DOMAIN MANIPULATION ===
+            self.update_progress(52, "Applying temporal domain manipulation...")
             video = input_stream.video
             
             # Micro frame timing adjustments (imperceptible but breaks temporal fingerprints)
@@ -125,6 +126,7 @@ class VideoProcessor:
                 luma_amount=variation['unsharp_amount'])
             
             # === LAYER 4: NOISE INJECTION SYSTEM ===
+            self.update_progress(58, "Injecting algorithmic noise patterns...")
             # Multi-layered noise for maximum algorithm confusion
             # Temporal noise (changes over time)
             video = video.filter('noise', alls=variation['noise_level'], allf='t+u')
@@ -135,6 +137,7 @@ class VideoProcessor:
                     '1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1')
             
             # === LAYER 5: PIXEL-LEVEL DISRUPTION ===
+            self.update_progress(62, "Applying pixel-level algorithm disruption...")
             # Micro-blur with temporal variation
             blur_radius = f"{variation['blur_radius']}+{variation['blur_variation']}*sin(2*PI*t/{variation['blur_period']})"
             video = video.filter('boxblur', luma_radius=blur_radius, luma_power=1)
@@ -176,19 +179,22 @@ class VideoProcessor:
             else:
                 print("No audio stream found in input - processing video only")
             
-            # === LAYER 7: METADATA & CONTAINER MANIPULATION ===
-            # Advanced encoding with randomized parameters
+            # === LAYER 7: HIGH-QUALITY 1080P60 ENCODING WITH ANTI-ALGORITHM METADATA ===
+            self.update_progress(65, "Preparing ultra-high quality 1080p60 encoding...")
+            # Ultra-high quality settings optimized for platform algorithms while maintaining evasion
             encoding_params = {
                 'acodec': 'aac',
-                'vcodec': 'libx264',
-                'crf': variation['crf'],
-                'preset': variation['encoding_preset'],
-                'profile:v': variation['h264_profile'],
-                'level': variation['h264_level'],
-                'b:v': variation['bitrate'],
-                'b:a': self.audio_quality,
+                'vcodec': 'libx264', 
+                'crf': 16,  # Ultra-high quality (was random 20-24)
+                'preset': 'slow',  # High-quality encoding for maximum detail
+                'profile:v': 'high',  # Best compression efficiency
+                'level': '4.2',  # Supports 1080p60 high bitrate
+                'b:v': '12M',  # Ultra-high bitrate for crisp quality
+                'r': 60,  # Force 60fps output
+                's': '1920x1080',  # Force 1080p resolution
+                'b:a': '320k',  # Maximum audio quality
                 'movflags': '+faststart',  # Optimize for streaming
-                'pix_fmt': variation['pixel_format']
+                'pix_fmt': 'yuv420p'  # Universal compatibility
             }
             
             # === LAYER 8: SINGLE-STAGE ENCODING (AUDIO PRESERVATION) ===
@@ -212,10 +218,12 @@ class VideoProcessor:
                 print("Audio parameters added: copy codec")
             
             # Single encoding stage to avoid audio loss with better error handling
-            self.update_progress(75, "Encoding final output...")
+            self.update_progress(75, "Starting final 1080p60 encoding process...")
+            self.update_progress(80, "Encoding ultra-high quality video stream...")
             try:
                 if has_audio and audio is not None:
                     print("Encoding with audio...")
+                    self.update_progress(85, "Combining video with preserved audio...")
                     # Encode with audio using copy codec to preserve original audio
                     (
                         ffmpeg
@@ -270,7 +278,9 @@ class VideoProcessor:
                     raise Exception(f"All encoding attempts failed: {e}")
             
             # Validate audio in output
+            self.update_progress(95, "Validating output quality and audio integrity...")
             self._validate_audio_in_output(output_path)
+            self.update_progress(100, "Ultra-high quality 1080p60 processing complete!")
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in TikTok preset: {e}")
@@ -304,17 +314,23 @@ class VideoProcessor:
             try:
                 if has_audio:
                     audio = input_stream.audio
+                    # High-quality Instagram encoding with 1080p60
                     (
                         ffmpeg
-                        .output(video, audio, output_path, acodec='copy', vcodec='libx264', crf=22, 
-                               **{'b:v': '2.5M'})
+                        .output(video, audio, output_path, 
+                               acodec='copy', vcodec='libx264', 
+                               crf=16, preset='slow', profile='high',
+                               **{'b:v': '10M', 'r': 60, 's': '1920x1080'})
                         .overwrite_output()
-                        .run(quiet=False)  # Show output for debugging
+                        .run(quiet=False)
                     )
                 else:
+                    # High-quality Instagram encoding without audio
                     (
                         ffmpeg
-                        .output(video, output_path, vcodec='libx264', crf=22, **{'b:v': '2.5M'})
+                        .output(video, output_path, 
+                               vcodec='libx264', crf=16, preset='slow', profile='high',
+                               **{'b:v': '10M', 'r': 60, 's': '1920x1080'})
                         .overwrite_output()
                         .run(quiet=False)
                     )
@@ -372,17 +388,23 @@ class VideoProcessor:
             try:
                 if has_audio:
                     audio = input_stream.audio
+                    # High-quality YouTube encoding with 1080p60
                     (
                         ffmpeg
-                        .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21,
-                               ar=44100, ac=2, **{'b:v': '3M', 'b:a': self.audio_quality})
+                        .output(video, audio, output_path, 
+                               acodec='copy', vcodec='libx264', 
+                               crf=15, preset='slow', profile='high',
+                               **{'b:v': '15M', 'r': 60, 's': '1920x1080'})
                         .overwrite_output()
-                        .run(quiet=False)  # Show output for debugging
+                        .run(quiet=False)
                     )
                 else:
+                    # High-quality YouTube encoding without audio
                     (
                         ffmpeg
-                        .output(video, output_path, vcodec='libx264', crf=21, **{'b:v': '3M'})
+                        .output(video, output_path, 
+                               vcodec='libx264', crf=15, preset='slow', profile='high',
+                               **{'b:v': '15M', 'r': 60, 's': '1920x1080'})
                         .overwrite_output()
                         .run(quiet=False)
                     )
