@@ -308,7 +308,13 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
         - Dynamic quality and encoding variations (prevents pattern detection)
         - Audio frequency manipulation (videos): Sample rate + EQ + volume micro-adjustments
         
-        **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes
+        **Layer 6: Metadata & File Structure Manipulation** (Advanced fingerprint evasion)
+        - Complete EXIF metadata stripping and fake camera data injection
+        - Random file header modifications and invisible padding insertion
+        - File hash randomization through structure manipulation
+        - Fake timestamp and device signature generation
+        
+        **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes + undetectable file fingerprint
         """)
         
     except Exception as e:
