@@ -1,4 +1,5 @@
 from PIL import Image, ImageEnhance, ImageFilter
+from PIL.Image import Resampling
 import tempfile
 import os
 from pathlib import Path
@@ -22,7 +23,7 @@ class ImageProcessor:
             raise ValueError(f"Unknown platform: {platform}")
     
     def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Flip + color boost + noise"""
+        """TikTok: Advanced algorithm evasion with multiple transformations"""
         try:
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary
@@ -30,26 +31,42 @@ class ImageProcessor:
                     img = img.convert('RGB')
                 
                 # Horizontal flip
-                img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
                 
-                # Color boost
+                # Multiple color adjustments for heavy algorithm evasion
                 enhancer = ImageEnhance.Color(img)
-                img = enhancer.enhance(1.3)
+                img = enhancer.enhance(1.35)
                 
-                # Brightness boost
                 enhancer = ImageEnhance.Brightness(img)
-                img = enhancer.enhance(1.1)
+                img = enhancer.enhance(1.08)
                 
-                # Add noise
-                img = self._add_noise(img, intensity=20)
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(1.12)
                 
-                img.save(output_path, 'JPEG', quality=85)
+                enhancer = ImageEnhance.Sharpness(img)
+                img = enhancer.enhance(1.15)
+                
+                # Add strong noise for algorithm confusion
+                img = self._add_noise(img, intensity=30)
+                
+                # Apply subtle rotation to change pixel positions
+                img = img.rotate(0.5, expand=False, fillcolor=(0, 0, 0))
+                
+                # Color channel manipulation
+                img = self._adjust_color_channels(img, r_adjust=1.02, g_adjust=0.98, b_adjust=1.01)
+                
+                # Micro resize to change file hash
+                width, height = img.size
+                img = img.resize((int(width * 0.999), int(height * 0.999)), Resampling.LANCZOS)
+                img = img.resize((width, height), Resampling.LANCZOS)
+                
+                img.save(output_path, 'JPEG', quality=82, optimize=True)
                 return output_path
         except Exception as e:
             raise Exception(f"Error in TikTok image preset: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
-        """Instagram: Square crop + color enhancement + grain"""
+        """Instagram: Advanced square processing with heavy algorithm evasion"""
         try:
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary
@@ -59,24 +76,40 @@ class ImageProcessor:
                 # Square crop
                 img = self._crop_to_square(img)
                 
-                # Color enhancement
+                # Heavy color and contrast adjustments
                 enhancer = ImageEnhance.Color(img)
-                img = enhancer.enhance(1.2)
+                img = enhancer.enhance(1.28)
                 
-                # Contrast boost
                 enhancer = ImageEnhance.Contrast(img)
-                img = enhancer.enhance(1.1)
+                img = enhancer.enhance(1.14)
                 
-                # Film grain
-                img = self._add_noise(img, intensity=10)
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(1.05)
                 
-                img.save(output_path, 'JPEG', quality=90)
+                enhancer = ImageEnhance.Sharpness(img)
+                img = enhancer.enhance(1.18)
+                
+                # Strong film grain and noise
+                img = self._add_noise(img, intensity=22)
+                
+                # Color channel manipulation for algorithm confusion
+                img = self._adjust_color_channels(img, r_adjust=1.03, g_adjust=0.97, b_adjust=1.02)
+                
+                # Micro rotation and resize
+                img = img.rotate(-0.3, expand=False, fillcolor=(0, 0, 0))
+                
+                # Scale manipulation to change hash
+                width, height = img.size
+                img = img.resize((int(width * 1.002), int(height * 1.002)), Resampling.LANCZOS)
+                img = img.resize((width, height), Resampling.LANCZOS)
+                
+                img.save(output_path, 'JPEG', quality=88, optimize=True)
                 return output_path
         except Exception as e:
             raise Exception(f"Error in Instagram image preset: {e}")
     
     def _apply_youtube_preset(self, input_path, output_path):
-        """YouTube: 16:9 letterbox + saturation"""
+        """YouTube: Advanced landscape processing with heavy algorithm evasion"""
         try:
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary
@@ -86,15 +119,34 @@ class ImageProcessor:
                 # 16:9 letterbox
                 img = self._letterbox_16_9(img)
                 
-                # Saturation boost
+                # Heavy color and enhancement adjustments
                 enhancer = ImageEnhance.Color(img)
-                img = enhancer.enhance(1.3)
+                img = enhancer.enhance(1.38)
                 
-                # Slight sharpness increase
                 enhancer = ImageEnhance.Sharpness(img)
-                img = enhancer.enhance(1.1)
+                img = enhancer.enhance(1.22)
                 
-                img.save(output_path, 'JPEG', quality=95)
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(1.08)
+                
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(1.02)
+                
+                # Algorithm evasion noise
+                img = self._add_noise(img, intensity=18)
+                
+                # Color channel manipulation
+                img = self._adjust_color_channels(img, r_adjust=0.99, g_adjust=1.02, b_adjust=0.98)
+                
+                # Tiny rotation for pixel position changes
+                img = img.rotate(0.2, expand=False, fillcolor=(1, 1, 1))
+                
+                # Scale manipulation
+                width, height = img.size
+                img = img.resize((int(width * 1.001), int(height * 1.001)), Resampling.LANCZOS)
+                img = img.resize((width, height), Resampling.LANCZOS)
+                
+                img.save(output_path, 'JPEG', quality=91, optimize=True)
                 return output_path
         except Exception as e:
             raise Exception(f"Error in YouTube image preset: {e}")
@@ -124,9 +176,9 @@ class ImageProcessor:
         
         if cmd_type == 'flip':
             if params.get('direction') == 'horizontal':
-                return img.transpose(Image.FLIP_LEFT_RIGHT)
+                return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             elif params.get('direction') == 'vertical':
-                return img.transpose(Image.FLIP_TOP_BOTTOM)
+                return img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
         
         elif cmd_type == 'brightness':
             value = params.get('value', 100) / 100.0
@@ -220,3 +272,14 @@ class ImageProcessor:
         vintage_img = enhancer.enhance(0.9)
         
         return vintage_img
+    
+    def _adjust_color_channels(self, img, r_adjust=1.0, g_adjust=1.0, b_adjust=1.0):
+        """Adjust individual color channels for algorithm evasion"""
+        img_array = np.array(img)
+        
+        # Adjust each channel separately
+        img_array[:, :, 0] = np.clip(img_array[:, :, 0] * r_adjust, 0, 255)  # Red
+        img_array[:, :, 1] = np.clip(img_array[:, :, 1] * g_adjust, 0, 255)  # Green
+        img_array[:, :, 2] = np.clip(img_array[:, :, 2] * b_adjust, 0, 255)  # Blue
+        
+        return Image.fromarray(img_array.astype(np.uint8))

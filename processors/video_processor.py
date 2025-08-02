@@ -21,17 +21,21 @@ class VideoProcessor:
             raise ValueError(f"Unknown platform: {platform}")
     
     def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Flip + speed up + zoom + glitch effect"""
+        """TikTok: Advanced algorithm evasion with multiple transformations"""
         try:
             (
                 ffmpeg
                 .input(input_path)
                 .video
                 .filter('hflip')  # Horizontal flip
-                .filter('setpts', '0.9*PTS')  # Speed up by 10%
-                .filter('zoompan', zoom='1.1', x='iw/2-(iw/zoom/2)', y='ih/2-(ih/zoom/2)', d=1)  # Zoom effect
-                .filter('noise', alls=20, allf='t+u')  # Glitch effect
-                .output(output_path, acodec='aac', vcodec='libx264', crf=23)
+                .filter('setpts', '0.85*PTS')  # Speed up by 15%
+                .filter('zoompan', zoom='1.15', x='iw/2-(iw/zoom/2)', y='ih/2-(ih/zoom/2)', d=1)  # Stronger zoom
+                .filter('eq', brightness=0.05, contrast=1.1, saturation=1.2)  # Color adjustments
+                .filter('unsharp', luma_msize_x=5, luma_msize_y=5, luma_amount=0.8)  # Sharpening
+                .filter('noise', alls=25, allf='t+u')  # Strong noise
+                .filter('boxblur', luma_radius=1, luma_power=1)  # Subtle blur to change pixels
+                .filter('colorbalance', rs=0.1, gs=-0.05, bs=0.02)  # Color balance shift
+                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2M'})
                 .overwrite_output()
                 .run(quiet=True)
             )
@@ -40,16 +44,21 @@ class VideoProcessor:
             raise Exception(f"FFmpeg error in TikTok preset: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
-        """Instagram: Square crop + color boost + grain"""
+        """Instagram: Advanced square processing with heavy modifications"""
         try:
             (
                 ffmpeg
                 .input(input_path)
                 .video
                 .filter('crop', 'min(iw,ih)', 'min(iw,ih)')  # Square crop
-                .filter('eq', saturation=1.2, brightness=0.1)  # Color boost
-                .filter('noise', alls=10, allf='t')  # Film grain
-                .output(output_path, acodec='aac', vcodec='libx264', crf=23)
+                .filter('eq', saturation=1.3, brightness=0.08, contrast=1.15, gamma=1.05)  # Enhanced color adjustments
+                .filter('hue', h=2)  # Slight hue shift
+                .filter('unsharp', luma_msize_x=3, luma_msize_y=3, luma_amount=0.6)  # Sharpening
+                .filter('noise', alls=18, allf='t+u')  # Film grain + temporal noise
+                .filter('colorbalance', rm=0.05, gm=-0.03, bm=0.02)  # Color balance
+                .filter('vibrance', intensity=0.2)  # Vibrance boost
+                .filter('scale', 'iw*0.999', 'ih*0.999')  # Tiny scale change
+                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M'})
                 .overwrite_output()
                 .run(quiet=True)
             )
@@ -58,15 +67,21 @@ class VideoProcessor:
             raise Exception(f"FFmpeg error in Instagram preset: {e}")
     
     def _apply_youtube_preset(self, input_path, output_path):
-        """YouTube: 16:9 letterbox + saturation boost"""
+        """YouTube: Advanced landscape processing with heavy algorithm evasion"""
         try:
             (
                 ffmpeg
                 .input(input_path)
                 .video
-                .filter('pad', 'max(iw,ih*16/9)', 'max(iw*9/16,ih)', '(ow-iw)/2', '(oh-ih)/2', color='black')  # 16:9 letterbox
-                .filter('eq', saturation=1.3)  # Saturation boost
-                .output(output_path, acodec='aac', vcodec='libx264', crf=23)
+                .filter('pad', 'max(iw,ih*16/9)', 'max(iw*9/16,ih)', '(ow-iw)/2', '(oh-ih)/2', color='#010101')  # 16:9 letterbox with near-black
+                .filter('eq', saturation=1.4, brightness=0.03, contrast=1.12, gamma=0.98)  # Enhanced adjustments
+                .filter('hue', h=-1, s=0.05)  # Hue and saturation shift
+                .filter('unsharp', luma_msize_x=7, luma_msize_y=7, luma_amount=0.7)  # Strong sharpening
+                .filter('noise', alls=15, allf='t+u')  # Noise for algorithm confusion
+                .filter('colorbalance', rs=-0.02, gs=0.03, bs=-0.01)  # Color balance
+                .filter('curves', psfile=None, preset='darker')  # Curve adjustment
+                .filter('scale', 'iw*1.001', 'ih*1.001')  # Minimal scale to change hash
+                .output(output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M'})
                 .overwrite_output()
                 .run(quiet=True)
             )
