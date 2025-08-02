@@ -123,54 +123,28 @@ class VideoProcessor:
                 gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
                 br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
             
-            # === LAYER 6: REVOLUTIONARY AUDIO PROCESSING ===
+            # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
             audio = input_stream.audio
             
-            # Stage 1: Sample rate micro-adjustments (breaks audio fingerprints)
-            audio = audio.filter('asetrate', variation['sample_rate_adjust'])
-            audio = audio.filter('aresample', 44100)  # Return to standard rate
-            
-            # Stage 2: Advanced audio steganography (LSB in frequency domain)
-            if variation.get('audio_steganography', False):
-                # Apply imperceptible frequency domain modifications
-                audio = audio.filter('highpass', f=variation['steg_highpass'])
-                audio = audio.filter('lowpass', f=variation['steg_lowpass'])
-            
-            # Stage 3: Multi-band EQ (imperceptible frequency domain changes)
-            for freq_band in variation['eq_bands']:
-                audio = audio.filter('equalizer', f=freq_band['freq'], g=freq_band['gain'], w=freq_band['width'])
-            
-            # Stage 4: Phase manipulation (breaks audio fingerprints)
-            if variation.get('phase_manipulation', False):
-                audio = audio.filter('aphaser', 
-                    in_gain=variation['phase_in_gain'],
-                    out_gain=variation['phase_out_gain'],
-                    delay=variation['phase_delay'],
-                    decay=variation['phase_decay'],
-                    speed=variation['phase_speed'])
-            
-            # Stage 5: Audio stereo field manipulation
-            if variation.get('stereo_manipulation', False):
-                audio = audio.filter('extrastereo', m=variation['stereo_factor'])
-            
-            # Stage 6: Psychoacoustic volume adjustments
-            audio = audio.filter('volume', variation['volume_factor'])
-            
-            # Stage 7: Silent frame insertion (advanced temporal evasion)
-            if variation.get('insert_silence', False):
-                silence_duration = variation['silence_duration']
-                silence_position = variation['silence_position']
-                silence = ffmpeg.input('anullsrc=r=44100:cl=stereo', f='lavfi', t=silence_duration)
-                audio = ffmpeg.filter([audio, silence], 'concat', n=2, v=0, a=1)
-            
-            # Stage 8: Audio compression artifacts simulation
-            if variation.get('compression_artifacts', False):
-                # Simulate and then reverse compression artifacts to confuse algorithms
-                audio = audio.filter('acompressor', 
-                    threshold=variation['comp_threshold'],
-                    ratio=variation['comp_ratio'],
-                    attack=variation['comp_attack'],
-                    release=variation['comp_release'])
+            # Only apply minimal, safe audio processing to preserve audio integrity
+            try:
+                # Stage 1: Very subtle volume adjustment only (safest operation)
+                audio = audio.filter('volume', variation['volume_factor'])
+                
+                # Stage 2: Only apply EQ if safe parameters
+                if variation.get('eq_bands') and len(variation['eq_bands']) > 0:
+                    # Apply only the first, safest EQ band
+                    safe_eq = variation['eq_bands'][0]
+                    if abs(safe_eq['gain']) < 0.1:  # Only very small adjustments
+                        audio = audio.filter('equalizer', f=safe_eq['freq'], g=safe_eq['gain'], w=safe_eq['width'])
+                
+                # Skip all other complex audio processing that can cause audio loss
+                # (sample rate changes, phase manipulation, silence insertion, compression)
+                
+            except Exception as audio_error:
+                # If any audio processing fails, fall back to original audio
+                print(f"Audio processing failed, using original audio: {audio_error}")
+                audio = input_stream.audio
             
             # === LAYER 7: METADATA & CONTAINER MANIPULATION ===
             # Advanced encoding with randomized parameters
@@ -200,14 +174,48 @@ class VideoProcessor:
                 'metadata': f"creation_time={variation['fake_creation_time']}"
             })
             
-            # Single encoding stage to avoid audio loss
-            (
-                ffmpeg
-                .output(video, audio, output_path, **final_params)
-                .overwrite_output()
-                .run(quiet=False)  # Show FFmpeg output for debugging
-            )
+            # Single encoding stage to avoid audio loss with better error handling
+            try:
+                # Ensure audio codec is explicitly set to preserve audio
+                final_params['acodec'] = 'aac'
+                final_params['ar'] = 44100  # Ensure sample rate
+                final_params['ac'] = 2      # Ensure stereo
+                
+                (
+                    ffmpeg
+                    .output(video, audio, output_path, **final_params)
+                    .overwrite_output()
+                    .run(quiet=False, capture_stdout=True, capture_stderr=True)
+                )
+                
+                # Verify audio is present in output
+                probe = ffmpeg.probe(output_path)
+                audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
+                if not audio_streams:
+                    print("Warning: No audio stream detected in output, retrying with simpler encoding...")
+                    # Fallback: Simple copy with minimal processing
+                    (
+                        ffmpeg
+                        .output(input_stream.video, input_stream.audio, output_path, 
+                               vcodec='libx264', acodec='aac', crf=23)
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
+                    
+            except ffmpeg.Error as e:
+                print(f"FFmpeg encoding failed: {e}")
+                print("Attempting fallback encoding with original audio...")
+                # Ultimate fallback: preserve original audio completely
+                (
+                    ffmpeg
+                    .output(video, input_stream.audio, output_path, 
+                           vcodec='libx264', acodec='copy')
+                    .overwrite_output()
+                    .run(quiet=False)
+                )
             
+            # Validate audio in output
+            self._validate_audio_in_output(output_path)
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in TikTok preset: {e}")
@@ -233,13 +241,28 @@ class VideoProcessor:
             # Audio processing (keep original)
             audio = input_stream.audio
             
-            # Combine video and audio
-            (
-                ffmpeg
-                .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M', 'b:a': '192k'})
-                .overwrite_output()
-                .run(quiet=True)
-            )
+            # Combine video and audio with better error handling
+            try:
+                (
+                    ffmpeg
+                    .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, 
+                           ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': '192k'})
+                    .overwrite_output()
+                    .run(quiet=False)  # Show output for debugging
+                )
+            except ffmpeg.Error as e:
+                print(f"Instagram encoding failed, trying fallback: {e}")
+                # Fallback: copy audio to preserve it
+                (
+                    ffmpeg
+                    .output(video, input_stream.audio, output_path, 
+                           vcodec='libx264', acodec='copy', crf=22)
+                    .overwrite_output()
+                    .run(quiet=False)
+                )
+            
+            # Validate audio in output
+            self._validate_audio_in_output(output_path)
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in Instagram preset: {e}")
@@ -265,13 +288,28 @@ class VideoProcessor:
             # Audio processing (keep original)
             audio = input_stream.audio
             
-            # Combine video and audio
-            (
-                ffmpeg
-                .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M', 'b:a': '192k'})
-                .overwrite_output()
-                .run(quiet=True)
-            )
+            # Combine video and audio with better error handling
+            try:
+                (
+                    ffmpeg
+                    .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21,
+                           ar=44100, ac=2, **{'b:v': '3M', 'b:a': '192k'})
+                    .overwrite_output()
+                    .run(quiet=False)  # Show output for debugging
+                )
+            except ffmpeg.Error as e:
+                print(f"YouTube encoding failed, trying fallback: {e}")
+                # Fallback: copy audio to preserve it
+                (
+                    ffmpeg
+                    .output(video, input_stream.audio, output_path, 
+                           vcodec='libx264', acodec='copy', crf=21)
+                    .overwrite_output()
+                    .run(quiet=False)
+                )
+            
+            # Validate audio in output
+            self._validate_audio_in_output(output_path)
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in YouTube preset: {e}")
@@ -543,3 +581,18 @@ class VideoProcessor:
                                            minutes=random.randint(0, 59),
                                            seconds=random.randint(0, 59))
         return fake_time.strftime('%Y-%m-%dT%H:%M:%S.000000Z')
+    
+    def _validate_audio_in_output(self, file_path):
+        """Check if the output file contains audio streams"""
+        try:
+            probe = ffmpeg.probe(file_path)
+            audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
+            if audio_streams:
+                print(f"✓ Audio validated: {len(audio_streams)} audio stream(s) found")
+                return True
+            else:
+                print("⚠ Warning: No audio streams found in output file")
+                return False
+        except Exception as e:
+            print(f"⚠ Could not validate audio: {e}")
+            return False

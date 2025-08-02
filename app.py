@@ -355,15 +355,13 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
         - Advanced color channel mixing (steganography-inspired)
         - Psycho-visual masking for imperceptible changes
         
-        **Layer 6: Revolutionary 8-Stage Audio Processing**
-        - **Stage 1:** Sample rate micro-adjustments (breaks audio fingerprints)
-        - **Stage 2:** Advanced audio steganography (LSB in frequency domain)
-        - **Stage 3:** Multi-band EQ (3 frequency bands with imperceptible changes)
-        - **Stage 4:** Phase manipulation (breaks audio phase fingerprints)
-        - **Stage 5:** Stereo field manipulation (imperceptible stereo width changes)
-        - **Stage 6:** Psychoacoustic volume (below human perception threshold)
-        - **Stage 7:** Silent frame insertion (strategic silence for temporal evasion)
-        - **Stage 8:** Compression artifacts simulation (confuses detection algorithms)
+        **Layer 6: Optimized Audio Processing (Preserves Audio Quality)**
+        - **Minimal Processing:** Only essential, safe audio adjustments to preserve audio integrity
+        - **Volume Normalization:** Subtle psychoacoustic volume adjustments
+        - **Safe EQ:** Single-band equalizer with minimal gain adjustments
+        - **Audio Preservation:** Fallback to original audio if any processing fails
+        - **Quality Validation:** Automatic audio stream verification in output
+        - **Error Recovery:** Multiple fallback encodings to ensure audio is never lost
         
         **Layer 7: Container & Metadata Manipulation**
         - Randomized H.264 encoding parameters (profile, level, preset)
