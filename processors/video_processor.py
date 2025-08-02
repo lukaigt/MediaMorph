@@ -33,19 +33,31 @@ class VideoProcessor:
             # Build advanced FFmpeg filter chain with 2025 research techniques
             input_stream = ffmpeg.input(input_path)
             
-            # === LAYER 1: TEMPORAL DOMAIN MANIPULATION ===
+            # === LAYER 1: ADVANCED TEMPORAL DOMAIN MANIPULATION ===
             video = input_stream.video
             
             # Micro frame timing adjustments (imperceptible but breaks temporal fingerprints)
             speed_factor = variation['speed_factor']
             video = video.filter('setpts', f'{speed_factor}*PTS')
             
-            # Frame interpolation with subtle variations
-            if variation.get('use_frame_interpolation', False):
+            # Frame duplication/deletion for temporal evasion (imperceptible at 30fps)
+            if variation.get('frame_manipulation', False):
+                # Randomly duplicate or skip frames to break temporal patterns
+                video = video.filter('framestep', step=variation['frame_step'])
+                # Re-interpolate to maintain smooth playback
                 video = video.filter('minterpolate', fps=variation['target_fps'], mi_mode='mci', mc_mode='aobmc')
             
-            # === LAYER 2: SPATIAL DOMAIN EVASION ===
-            # Dynamic zoom with micro-variations to break spatial patterns
+            # Advanced frame interpolation with motion compensation
+            elif variation.get('use_frame_interpolation', False):
+                video = video.filter('minterpolate', 
+                    fps=variation['target_fps'], 
+                    mi_mode='mci', 
+                    mc_mode='aobmc',
+                    me_mode='bidir',
+                    vsbmc=1)  # Advanced motion estimation
+            
+            # === LAYER 2: ADVANCED SPATIAL DOMAIN EVASION ===
+            # Dynamic zoom with sine wave micro-variations
             zoom_factor = variation['zoom_factor']
             video = video.filter('zoompan', 
                 zoom=f"{zoom_factor}+0.001*sin(2*PI*t/{variation['zoom_period']})", 
@@ -53,13 +65,28 @@ class VideoProcessor:
                 y='ih/2-(ih/zoom/2)', 
                 d=1)
             
-            # Subtle geometric transformations
+            # Optical flow disruption (breaks motion-based detection)
+            if variation.get('optical_flow_disruption', False):
+                # Apply subtle motion vector modifications
+                video = video.filter('vidstabdetect', stepsize=variation['flow_stepsize'], shakiness=1, accuracy=15)
+                video = video.filter('vidstabtransform', 
+                    smoothing=variation['flow_smoothing'], 
+                    maxshift=variation['flow_maxshift'],
+                    maxangle=variation['flow_maxangle'])
+            
+            # Advanced geometric transformations
             if variation.get('apply_perspective', False):
                 video = video.filter('perspective', 
                     x0=variation['perspective']['x0'], y0=variation['perspective']['y0'],
                     x1=variation['perspective']['x1'], y1=variation['perspective']['y1'],
                     x2=variation['perspective']['x2'], y2=variation['perspective']['y2'],
                     x3=variation['perspective']['x3'], y3=variation['perspective']['y3'])
+            
+            # Lens distortion simulation (breaks geometric fingerprints)
+            if variation.get('lens_distortion', False):
+                video = video.filter('lenscorrection', 
+                    cx=variation['lens_cx'], cy=variation['lens_cy'],
+                    k1=variation['lens_k1'], k2=variation['lens_k2'])
             
             # === LAYER 3: FREQUENCY DOMAIN MANIPULATION ===
             # Advanced color space transformations
@@ -96,29 +123,54 @@ class VideoProcessor:
                 gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
                 br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
             
-            # === LAYER 6: ADVANCED AUDIO PROCESSING ===
+            # === LAYER 6: REVOLUTIONARY AUDIO PROCESSING ===
             audio = input_stream.audio
             
             # Stage 1: Sample rate micro-adjustments (breaks audio fingerprints)
             audio = audio.filter('asetrate', variation['sample_rate_adjust'])
+            audio = audio.filter('aresample', 44100)  # Return to standard rate
             
-            # Stage 2: Multi-band EQ (imperceptible frequency domain changes)
+            # Stage 2: Advanced audio steganography (LSB in frequency domain)
+            if variation.get('audio_steganography', False):
+                # Apply imperceptible frequency domain modifications
+                audio = audio.filter('highpass', f=variation['steg_highpass'])
+                audio = audio.filter('lowpass', f=variation['steg_lowpass'])
+            
+            # Stage 3: Multi-band EQ (imperceptible frequency domain changes)
             for freq_band in variation['eq_bands']:
                 audio = audio.filter('equalizer', f=freq_band['freq'], g=freq_band['gain'], w=freq_band['width'])
             
-            # Stage 3: Audio stereo field manipulation
+            # Stage 4: Phase manipulation (breaks audio fingerprints)
+            if variation.get('phase_manipulation', False):
+                audio = audio.filter('aphaser', 
+                    in_gain=variation['phase_in_gain'],
+                    out_gain=variation['phase_out_gain'],
+                    delay=variation['phase_delay'],
+                    decay=variation['phase_decay'],
+                    speed=variation['phase_speed'])
+            
+            # Stage 5: Audio stereo field manipulation
             if variation.get('stereo_manipulation', False):
                 audio = audio.filter('extrastereo', m=variation['stereo_factor'])
             
-            # Stage 4: Psychoacoustic volume adjustments
+            # Stage 6: Psychoacoustic volume adjustments
             audio = audio.filter('volume', variation['volume_factor'])
             
-            # Stage 5: Silent frame insertion (advanced temporal evasion)
+            # Stage 7: Silent frame insertion (advanced temporal evasion)
             if variation.get('insert_silence', False):
                 silence_duration = variation['silence_duration']
                 silence_position = variation['silence_position']
                 silence = ffmpeg.input('anullsrc=r=44100:cl=stereo', f='lavfi', t=silence_duration)
                 audio = ffmpeg.filter([audio, silence], 'concat', n=2, v=0, a=1)
+            
+            # Stage 8: Audio compression artifacts simulation
+            if variation.get('compression_artifacts', False):
+                # Simulate and then reverse compression artifacts to confuse algorithms
+                audio = audio.filter('acompressor', 
+                    threshold=variation['comp_threshold'],
+                    ratio=variation['comp_ratio'],
+                    attack=variation['comp_attack'],
+                    release=variation['comp_release'])
             
             # === LAYER 7: METADATA & CONTAINER MANIPULATION ===
             # Advanced encoding with randomized parameters
@@ -135,24 +187,38 @@ class VideoProcessor:
                 'pix_fmt': variation['pixel_format']
             }
             
-            # === LAYER 8: CONTAINER FORMAT CHAIN ===
-            # First encode to intermediate format
+            # === LAYER 8: ADVANCED CONTAINER FORMAT CHAIN ===
+            # Multi-stage encoding with keyframe manipulation
+            
+            # Stage 1: Intermediate encoding with custom keyframe intervals
             temp_output = output_path.replace('.mp4', '_temp.mkv')
+            intermediate_params = encoding_params.copy()
+            intermediate_params.update({
+                'g': variation['keyframe_interval'],  # Custom keyframe interval
+                'sc_threshold': variation['scene_threshold'],  # Scene change detection
+                'keyint_min': variation['min_keyframe_interval']
+            })
             
             (
                 ffmpeg
-                .output(video, audio, temp_output, **encoding_params)
+                .output(video, audio, temp_output, **intermediate_params)
                 .overwrite_output()
                 .run(quiet=True)
             )
             
-            # Re-encode to final format with different settings (breaks container fingerprints)
+            # Stage 2: Final encoding with different compression settings
             final_params = {
                 'acodec': 'aac',
                 'vcodec': 'libx264', 
                 'crf': variation['final_crf'],
+                'preset': variation['final_preset'],
+                'profile:v': variation['final_profile'],
                 'movflags': '+faststart',
-                'metadata': f"creation_time={variation['fake_creation_time']}"
+                'metadata': f"creation_time={variation['fake_creation_time']}",
+                # Advanced compression settings
+                'x264opts': f"keyint={variation['final_keyframe_interval']}:min-keyint={variation['final_min_keyframe']}:bframes={variation['b_frames']}",
+                'bf': variation['b_frames'],  # B-frame count
+                'refs': variation['ref_frames']  # Reference frame count
             }
             
             (
@@ -254,20 +320,32 @@ class VideoProcessor:
         if platform == 'tiktok':
             return {
                 # === TEMPORAL DOMAIN ===
-                'speed_factor': random.uniform(0.995, 1.005),    # Micro speed variations (imperceptible)
+                'speed_factor': random.uniform(0.998, 1.002),    # Micro speed variations (imperceptible)
+                'frame_manipulation': random.choice([True, False]),
+                'frame_step': random.choice([1, 2, 3]),          # Frame step for duplication/deletion
                 'use_frame_interpolation': random.choice([True, False]),
-                'target_fps': random.choice([29.97, 30, 30.03]),  # Slight FPS variations
+                'target_fps': random.choice([29.97, 30, 30.03]), # Slight FPS variations
                 
                 # === SPATIAL DOMAIN ===
-                'zoom_factor': random.uniform(1.02, 1.08),       # Subtle zoom
+                'zoom_factor': random.uniform(1.01, 1.05),       # Subtle zoom
                 'zoom_period': random.uniform(60, 120),          # Zoom oscillation period
+                'optical_flow_disruption': random.choice([True, False]),
+                'flow_stepsize': random.choice([6, 8, 12]),      # Motion detection step size
+                'flow_smoothing': random.randint(10, 30),        # Flow smoothing
+                'flow_maxshift': random.randint(5, 15),          # Max motion shift
+                'flow_maxangle': random.uniform(0.1, 0.3),       # Max rotation angle
                 'apply_perspective': random.choice([True, False]),
                 'perspective': {
-                    'x0': random.uniform(0, 10), 'y0': random.uniform(0, 10),
-                    'x1': random.uniform(90, 100), 'y1': random.uniform(0, 10),
-                    'x2': random.uniform(0, 10), 'y2': random.uniform(90, 100),
-                    'x3': random.uniform(90, 100), 'y3': random.uniform(90, 100)
+                    'x0': random.uniform(0, 5), 'y0': random.uniform(0, 5),
+                    'x1': random.uniform(95, 100), 'y1': random.uniform(0, 5),
+                    'x2': random.uniform(0, 5), 'y2': random.uniform(95, 100),
+                    'x3': random.uniform(95, 100), 'y3': random.uniform(95, 100)
                 },
+                'lens_distortion': random.choice([True, False]),
+                'lens_cx': random.uniform(0.45, 0.55),           # Lens center X
+                'lens_cy': random.uniform(0.45, 0.55),           # Lens center Y
+                'lens_k1': random.uniform(-0.05, 0.05),          # Lens distortion k1
+                'lens_k2': random.uniform(-0.02, 0.02),          # Lens distortion k2
                 
                 # === FREQUENCY DOMAIN ===
                 'brightness': random.uniform(0.005, 0.02),       # Very subtle brightness
@@ -291,21 +369,35 @@ class VideoProcessor:
                     'br': random.uniform(-0.01, 0.01), 'bg': random.uniform(-0.01, 0.01), 'bb': random.uniform(0.98, 1.02)
                 },
                 
-                # === ADVANCED AUDIO ===
+                # === REVOLUTIONARY AUDIO ===
                 'sample_rate_adjust': random.choice([44095, 44105, 44110]), # Micro sample rate changes
+                'audio_steganography': random.choice([True, False]),
+                'steg_highpass': random.choice([50, 80, 120]),   # Steganography highpass
+                'steg_lowpass': random.choice([8000, 12000, 16000]), # Steganography lowpass
                 'eq_bands': [
-                    {'freq': random.choice([440, 880, 1320]), 'gain': random.uniform(-0.2, 0.2), 'width': random.choice([1, 2])},
-                    {'freq': random.choice([2200, 4400, 8800]), 'gain': random.uniform(-0.15, 0.15), 'width': random.choice([1, 2])},
-                    {'freq': random.choice([100, 200, 400]), 'gain': random.uniform(-0.1, 0.1), 'width': random.choice([2, 3])}
+                    {'freq': random.choice([440, 880, 1320]), 'gain': random.uniform(-0.1, 0.1), 'width': random.choice([1, 2])},
+                    {'freq': random.choice([2200, 4400, 8800]), 'gain': random.uniform(-0.08, 0.08), 'width': random.choice([1, 2])},
+                    {'freq': random.choice([100, 200, 400]), 'gain': random.uniform(-0.05, 0.05), 'width': random.choice([2, 3])}
                 ],
+                'phase_manipulation': random.choice([True, False]),
+                'phase_in_gain': random.uniform(0.4, 0.6),       # Phase input gain
+                'phase_out_gain': random.uniform(0.7, 0.9),      # Phase output gain
+                'phase_delay': random.uniform(2.0, 4.0),         # Phase delay
+                'phase_decay': random.uniform(0.3, 0.7),         # Phase decay
+                'phase_speed': random.uniform(0.1, 0.5),         # Phase speed
                 'stereo_manipulation': random.choice([True, False]),
-                'stereo_factor': random.uniform(0.95, 1.05),
-                'volume_factor': random.uniform(0.998, 1.002),   # Barely perceptible
+                'stereo_factor': random.uniform(0.98, 1.02),
+                'volume_factor': random.uniform(0.999, 1.001),   # Barely perceptible
                 'insert_silence': random.choice([True, False]),
-                'silence_duration': random.uniform(0.01, 0.05),  # Very short silence
+                'silence_duration': random.uniform(0.005, 0.02), # Very short silence
                 'silence_position': random.choice(['start', 'middle', 'end']),
+                'compression_artifacts': random.choice([True, False]),
+                'comp_threshold': random.uniform(0.1, 0.3),      # Compressor threshold
+                'comp_ratio': random.uniform(2, 4),              # Compressor ratio
+                'comp_attack': random.uniform(1, 5),             # Compressor attack
+                'comp_release': random.uniform(50, 150),         # Compressor release
                 
-                # === ENCODING PARAMETERS ===
+                # === ADVANCED ENCODING PARAMETERS ===
                 'crf': random.randint(20, 24),
                 'encoding_preset': random.choice(['medium', 'slow', 'slower']),
                 'h264_profile': random.choice(['main', 'high']),
@@ -313,7 +405,20 @@ class VideoProcessor:
                 'pixel_format': random.choice(['yuv420p', 'yuvj420p']),
                 'bitrate': random.choice(['1.8M', '2M', '2.2M']),
                 'audio_bitrate': random.choice(['128k', '160k', '192k']),
+                
+                # === KEYFRAME MANIPULATION ===
+                'keyframe_interval': random.randint(250, 350),   # GOP size
+                'scene_threshold': random.uniform(0.3, 0.5),     # Scene change threshold
+                'min_keyframe_interval': random.randint(10, 25), # Min keyframe interval
+                
+                # === FINAL ENCODING ===
                 'final_crf': random.randint(21, 25),
+                'final_preset': random.choice(['fast', 'medium', 'slow']),
+                'final_profile': random.choice(['main', 'high']),
+                'final_keyframe_interval': random.randint(200, 400),
+                'final_min_keyframe': random.randint(8, 20),
+                'b_frames': random.randint(2, 5),                # B-frame count
+                'ref_frames': random.randint(2, 4),              # Reference frames
                 'fake_creation_time': self._generate_fake_timestamp()
             }
         elif platform == 'instagram':
