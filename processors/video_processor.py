@@ -16,18 +16,32 @@ class VideoProcessor:
         """Set the audio quality for video processing"""
         self.audio_quality = quality
     
+    def set_progress_callback(self, callback):
+        """Set callback function for progress updates"""
+        self.progress_callback = callback
+        
+    def update_progress(self, percentage, text):
+        """Update progress if callback is set"""
+        if hasattr(self, 'progress_callback') and self.progress_callback:
+            self.progress_callback(percentage, text)
+    
     def apply_preset(self, input_path, platform):
         """Apply platform-specific preset to video"""
         output_path = os.path.join(self.temp_dir, f"processed_{platform}_{Path(input_path).stem}.mp4")
         
+        self.update_progress(45, f"Applying {platform.upper()} algorithm evasion...")
+        
         if platform == 'tiktok':
-            return self._apply_tiktok_preset(input_path, output_path)
+            result = self._apply_tiktok_preset(input_path, output_path)
         elif platform == 'instagram':
-            return self._apply_instagram_preset(input_path, output_path)
+            result = self._apply_instagram_preset(input_path, output_path)
         elif platform == 'youtube':
-            return self._apply_youtube_preset(input_path, output_path)
+            result = self._apply_youtube_preset(input_path, output_path)
         else:
             raise ValueError(f"Unknown platform: {platform}")
+        
+        self.update_progress(85, f"Finalizing {platform.upper()} processing...")
+        return result
     
     def _apply_tiktok_preset(self, input_path, output_path):
         """TikTok: Advanced 8-layer anti-algorithm system with cutting-edge video evasion"""
@@ -37,6 +51,7 @@ class VideoProcessor:
             
             # Build advanced FFmpeg filter chain with 2025 research techniques
             input_stream = ffmpeg.input(input_path)
+            self.update_progress(50, "Building advanced filter chain...")
             
             # === LAYER 1: ADVANCED TEMPORAL DOMAIN MANIPULATION ===
             video = input_stream.video
@@ -128,42 +143,28 @@ class VideoProcessor:
                 gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
                 br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
             
-            # === LAYER 6: AUDIO PROCESSING WITH STREAM DETECTION ===
+            # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
+            self.update_progress(60, "Processing audio streams...")
             # Check if input has audio stream first
             try:
                 probe = ffmpeg.probe(input_path)
                 has_audio = any(stream['codec_type'] == 'audio' for stream in probe['streams'])
-            except:
+                print(f"Audio detection: {has_audio} audio streams found")
+            except Exception as e:
                 has_audio = False
-                print("Warning: Unable to probe input file for audio streams")
+                print(f"Warning: Unable to probe input file for audio streams: {e}")
             
+            # Always try to preserve original audio with minimal processing
             audio = None
             if has_audio:
                 try:
+                    # Use original audio with minimal processing to preserve it
                     audio = input_stream.audio
-                    
-                    # Only apply minimal, safe audio processing to preserve audio integrity
-                    # Stage 1: Very subtle volume adjustment only (safest operation)
-                    audio = audio.filter('volume', variation['volume_factor'])
-                    
-                    # Stage 2: Only apply EQ if safe parameters
-                    if variation.get('eq_bands') and len(variation['eq_bands']) > 0:
-                        # Apply only the first, safest EQ band
-                        safe_eq = variation['eq_bands'][0]
-                        if abs(safe_eq['gain']) < 0.1:  # Only very small adjustments
-                            audio = audio.filter('equalizer', f=safe_eq['freq'], g=safe_eq['gain'], w=safe_eq['width'])
-                    
-                    # Skip all other complex audio processing that can cause audio loss
-                    # (sample rate changes, phase manipulation, silence insertion, compression)
-                    
+                    print("Audio stream extracted successfully")
                 except Exception as audio_error:
-                    # If any audio processing fails, fall back to original audio
-                    print(f"Audio processing failed, using original audio: {audio_error}")
-                    try:
-                        audio = input_stream.audio
-                    except:
-                        audio = None
-                        has_audio = False
+                    print(f"Failed to extract audio stream: {audio_error}")
+                    audio = None
+                    has_audio = False
             else:
                 print("No audio stream found in input - processing video only")
             
@@ -198,58 +199,53 @@ class VideoProcessor:
             # Add audio parameters only if audio exists
             if has_audio and audio is not None:
                 final_params.update({
-                    'acodec': 'aac',
-                    'ar': 44100,  # Ensure sample rate
-                    'ac': 2,      # Ensure stereo
-                    'b:a': self.audio_quality
+                    'acodec': 'copy',  # Copy audio without re-encoding to preserve quality
                 })
+                print("Audio parameters added: copy codec")
             
             # Single encoding stage to avoid audio loss with better error handling
+            self.update_progress(75, "Encoding final output...")
             try:
                 if has_audio and audio is not None:
-                    # Encode with audio
+                    print("Encoding with audio...")
+                    # Encode with audio using copy codec to preserve original audio
                     (
                         ffmpeg
                         .output(video, audio, output_path, **final_params)
                         .overwrite_output()
-                        .run(quiet=False, capture_stdout=True, capture_stderr=True)
+                        .run(quiet=False)
                     )
                     
                     # Verify audio is present in output
                     try:
                         probe = ffmpeg.probe(output_path)
                         audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
-                        if not audio_streams:
-                            print("Warning: No audio stream detected in output, retrying with simpler encoding...")
-                            # Fallback: Simple copy with minimal processing
-                            (
-                                ffmpeg
-                                .output(input_stream.video, input_stream.audio, output_path, 
-                                       vcodec='libx264', acodec='aac', crf=23)
-                                .overwrite_output()
-                                .run(quiet=False)
-                            )
-                    except:
-                        pass  # Continue even if verification fails
+                        if audio_streams:
+                            print(f"✓ Audio preserved successfully: {len(audio_streams)} audio stream(s)")
+                        else:
+                            print("⚠ Warning: No audio streams found in output")
+                    except Exception as verify_error:
+                        print(f"Audio verification failed: {verify_error}")
                 else:
+                    print("Encoding video only (no audio)...")
                     # Encode video only
                     (
                         ffmpeg
                         .output(video, output_path, **final_params)
                         .overwrite_output()
-                        .run(quiet=False, capture_stdout=True, capture_stderr=True)
+                        .run(quiet=False)
                     )
                     
             except ffmpeg.Error as e:
                 print(f"FFmpeg encoding failed: {e}")
-                # Ultimate fallback: Simple encoding
+                # Ultimate fallback: Simple encoding preserving audio
                 try:
                     if has_audio:
                         print("Attempting fallback encoding with original audio...")
                         (
                             ffmpeg
-                            .output(video, input_stream.audio, output_path, 
-                                   vcodec='libx264', acodec='copy')
+                            .output(input_stream.video, input_stream.audio, output_path, 
+                                   vcodec='libx264', acodec='copy', crf=23)
                             .overwrite_output()
                             .run(quiet=False)
                         )
@@ -257,7 +253,7 @@ class VideoProcessor:
                         print("Attempting fallback encoding without audio...")
                         (
                             ffmpeg
-                            .output(video, output_path, vcodec='libx264', crf=23)
+                            .output(input_stream.video, output_path, vcodec='libx264', crf=23)
                             .overwrite_output()
                             .run(quiet=False)
                         )

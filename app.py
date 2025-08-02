@@ -475,9 +475,11 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
         
         # Process the file with enhanced settings
         if file_details['category'] == 'video':
-            # Pass audio quality setting to video processor
+            # Pass audio quality setting and progress callback to video processor
             if hasattr(processor, 'set_audio_quality'):
                 processor.set_audio_quality(options.get('audio_quality', '192k'))
+            if hasattr(processor, 'set_progress_callback'):
+                processor.set_progress_callback(update_progress)
             output_path = processor.apply_preset(temp_input_path, platform)
         else:
             output_path = processor.apply_preset(temp_input_path, platform)
