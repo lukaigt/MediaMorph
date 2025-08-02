@@ -354,7 +354,8 @@ def main():
     elif st.session_state.processed_file and uploaded_file is not None:
         st.header("🔄 Original vs Processed Comparison")
         
-        if st.session_state.file_details['category'] == 'image':
+        # Safety check for file_details
+        if st.session_state.file_details and st.session_state.file_details['category'] == 'image':
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("📸 Original Image")
@@ -629,7 +630,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
         st.error(f"Debug details: {traceback.format_exc()}")
     finally:
         # Cleanup temp file
-        if 'temp_input_path' in locals():
+        if 'temp_input_path' in locals() and temp_input_path:
             try:
                 os.unlink(temp_input_path)
             except:
@@ -694,7 +695,7 @@ def process_custom_command(uploaded_file, command_string, file_details, processo
         st.error(f"Debug details: {traceback.format_exc()}")
     finally:
         # Cleanup temp file
-        if 'temp_input_path' in locals():
+        if 'temp_input_path' in locals() and temp_input_path:
             try:
                 os.unlink(temp_input_path)
             except:
