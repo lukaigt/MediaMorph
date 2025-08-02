@@ -345,7 +345,7 @@ class VideoProcessor:
             video = (input_stream.video
                 .filter('pad', 'max(iw,ih*16/9)', 'max(iw*9/16,ih)', '(ow-iw)/2', '(oh-ih)/2', color='#010101')  # 16:9 letterbox with near-black
                 .filter('eq', saturation=1.4, brightness=0.03, contrast=1.12, gamma=0.98)  # Enhanced adjustments
-                .filter('hue', h=-1, s=0.05)  # Hue and saturation shift
+                .filter('hue', h=-1, s=1.05)  # Hue shift with slight saturation boost
                 .filter('unsharp', luma_msize_x=7, luma_msize_y=7, luma_amount=0.7)  # Strong sharpening
                 .filter('noise', alls=15, allf='t+u')  # Noise for algorithm confusion
                 .filter('colorbalance', rs=-0.02, gs=0.03, bs=-0.01)  # Color balance
