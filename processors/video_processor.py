@@ -10,6 +10,11 @@ class VideoProcessor:
         self.temp_dir = tempfile.gettempdir()
         self.session_history = []  # Track processing patterns to avoid repetition
         self.max_history = 10      # Remember last 10 processing sessions
+        self.audio_quality = '192k'  # Default audio quality
+    
+    def set_audio_quality(self, quality):
+        """Set the audio quality for video processing"""
+        self.audio_quality = quality
     
     def apply_preset(self, input_path, platform):
         """Apply platform-specific preset to video"""
@@ -156,7 +161,7 @@ class VideoProcessor:
                 'profile:v': variation['h264_profile'],
                 'level': variation['h264_level'],
                 'b:v': variation['bitrate'],
-                'b:a': variation['audio_bitrate'],
+                'b:a': self.audio_quality,
                 'movflags': '+faststart',  # Optimize for streaming
                 'pix_fmt': variation['pixel_format']
             }
@@ -246,7 +251,7 @@ class VideoProcessor:
                 (
                     ffmpeg
                     .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, 
-                           ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': '192k'})
+                           ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': self.audio_quality})
                     .overwrite_output()
                     .run(quiet=False)  # Show output for debugging
                 )
@@ -293,7 +298,7 @@ class VideoProcessor:
                 (
                     ffmpeg
                     .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21,
-                           ar=44100, ac=2, **{'b:v': '3M', 'b:a': '192k'})
+                           ar=44100, ac=2, **{'b:v': '3M', 'b:a': self.audio_quality})
                     .overwrite_output()
                     .run(quiet=False)  # Show output for debugging
                 )

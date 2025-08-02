@@ -36,22 +36,75 @@ def main():
     # Initialize session state
     if 'processed_file' not in st.session_state:
         st.session_state.processed_file = None
+    if 'processed_files' not in st.session_state:
+        st.session_state.processed_files = []
     if 'original_file' not in st.session_state:
         st.session_state.original_file = None
     if 'processing' not in st.session_state:
         st.session_state.processing = False
+    if 'progress' not in st.session_state:
+        st.session_state.progress = 0
+    if 'progress_text' not in st.session_state:
+        st.session_state.progress_text = ""
     if 'current_platform' not in st.session_state:
         st.session_state.current_platform = None
     if 'file_details' not in st.session_state:
         st.session_state.file_details = None
+    if 'batch_mode' not in st.session_state:
+        st.session_state.batch_mode = False
+    if 'audio_quality' not in st.session_state:
+        st.session_state.audio_quality = '192k'
+    
+    # Advanced settings sidebar
+    with st.sidebar:
+        st.header("⚙️ Advanced Settings")
+        
+        # Batch mode toggle
+        st.session_state.batch_mode = st.checkbox("🔄 Batch Processing Mode", value=st.session_state.batch_mode)
+        
+        # Audio quality for videos
+        st.subheader("🎵 Audio Quality")
+        st.session_state.audio_quality = st.selectbox(
+            "Audio Bitrate",
+            ['128k', '160k', '192k', '256k', '320k'],
+            index=2,  # Default to 192k
+            help="Higher = better quality but larger file size"
+        )
+        
+        # File size optimization
+        st.subheader("📊 File Size Options")
+        size_limit = st.selectbox(
+            "Output Size Limit",
+            ['No Limit', '25MB', '50MB', '100MB', '200MB'],
+            help="Automatically compress to fit size limits"
+        )
+        
+        # Advanced features
+        st.subheader("🔧 Advanced Features")
+        auto_crop = st.checkbox("✂️ Auto-crop black borders", value=False)
+        watermark_removal = st.checkbox("🚫 Attempt watermark removal", value=False)
+        preview_enabled = st.checkbox("👁️ Show preview before download", value=True)
     
     # File upload section
     st.header("📁 Upload Media")
-    uploaded_file = st.file_uploader(
-        "Choose a video or image file",
-        type=['mp4', 'mov', 'avi', 'jpg', 'jpeg', 'png', 'gif'],
-        help="Supported formats: MP4, MOV, AVI for videos | JPG, PNG, GIF for images"
-    )
+    
+    if st.session_state.batch_mode:
+        uploaded_files = st.file_uploader(
+            "Choose multiple video or image files",
+            type=['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'],
+            accept_multiple_files=True,
+            help="Supported formats: MP4, MOV, AVI, MKV, WebM for videos | JPG, PNG, GIF, BMP, TIFF for images"
+        )
+        uploaded_file = uploaded_files[0] if uploaded_files else None
+        if uploaded_files and len(uploaded_files) > 1:
+            st.info(f"📦 Batch mode: {len(uploaded_files)} files selected")
+    else:
+        uploaded_file = st.file_uploader(
+            "Choose a video or image file",
+            type=['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'],
+            help="Supported formats: MP4, MOV, AVI, MKV, WebM for videos | JPG, PNG, GIF, BMP, TIFF for images"
+        )
+        uploaded_files = [uploaded_file] if uploaded_file else []
     
     if uploaded_file is not None:
         st.session_state.original_file = uploaded_file
@@ -76,29 +129,85 @@ def main():
             st.subheader("🎥 Original Video")
             st.video(uploaded_file)
         
+        # Progress tracking display
+        if st.session_state.processing:
+            st.header("🔄 Processing Progress")
+            progress_bar = st.progress(st.session_state.progress / 100)
+            st.write(f"**{st.session_state.progress}%** - {st.session_state.progress_text}")
+            
+            # Auto-refresh while processing
+            if st.session_state.progress < 100:
+                time.sleep(0.5)
+                st.rerun()
+        
         # Platform preset buttons
         st.header("🎯 Advanced Algorithm Evasion Presets")
-        st.markdown("**Choose your target platform for heavy modifications that algorithms can't detect:**")
+        st.markdown("**Choose your target platform for MAXIMUM protection that algorithms can't detect:**")
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📱 TikTok Anti-Algorithm", use_container_width=True, type="primary"):
+            if st.button("📱 TikTok Anti-Algorithm", use_container_width=True, type="primary", 
+                        disabled=st.session_state.processing):
                 st.session_state.current_platform = 'tiktok'
-                with st.spinner("Processing for TikTok..."):
-                    process_media_preset(uploaded_file, 'tiktok', file_details, processors)
+                if st.session_state.batch_mode and len(uploaded_files) > 1:
+                    process_batch_files(uploaded_files, 'tiktok', processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
+                else:
+                    process_media_preset(uploaded_file, 'tiktok', file_details, processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
         
         with col2:
-            if st.button("📸 Instagram Anti-Algorithm", use_container_width=True, type="primary"):
+            if st.button("📸 Instagram Anti-Algorithm", use_container_width=True, type="primary",
+                        disabled=st.session_state.processing):
                 st.session_state.current_platform = 'instagram'
-                with st.spinner("Processing for Instagram..."):
-                    process_media_preset(uploaded_file, 'instagram', file_details, processors)
+                if st.session_state.batch_mode and len(uploaded_files) > 1:
+                    process_batch_files(uploaded_files, 'instagram', processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
+                else:
+                    process_media_preset(uploaded_file, 'instagram', file_details, processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
         
         with col3:
-            if st.button("🎥 YouTube Anti-Algorithm", use_container_width=True, type="primary"):
+            if st.button("🎥 YouTube Anti-Algorithm", use_container_width=True, type="primary",
+                        disabled=st.session_state.processing):
                 st.session_state.current_platform = 'youtube'
-                with st.spinner("Processing for YouTube..."):
-                    process_media_preset(uploaded_file, 'youtube', file_details, processors)
+                if st.session_state.batch_mode and len(uploaded_files) > 1:
+                    process_batch_files(uploaded_files, 'youtube', processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
+                else:
+                    process_media_preset(uploaded_file, 'youtube', file_details, processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
         
         # Show what each preset does
         with st.expander("🔧 What Each Preset Does", expanded=False):
@@ -195,8 +304,41 @@ def main():
             with st.spinner("Processing your media... Please wait."):
                 time.sleep(0.1)  # Small delay to show spinner
         
-    # Processing results and comparison section
-    if st.session_state.processed_file and uploaded_file is not None:
+    # Batch processing results section
+    if st.session_state.processed_files and len(st.session_state.processed_files) > 0:
+        st.header("📦 Batch Processing Results")
+        
+        st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {st.session_state.current_platform.title()}!")
+        
+        # Show file list
+        for i, file_info in enumerate(st.session_state.processed_files):
+            with st.expander(f"📄 {file_info['original_name']} → {file_info['platform'].title()}", expanded=False):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("**Original:**", file_info['original_name'])
+                    st.write("**Platform:**", file_info['platform'].title())
+                with col2:
+                    # Individual download
+                    with open(file_info['processed_path'], 'rb') as f:
+                        file_data = f.read()
+                    st.download_button(
+                        label=f"📥 Download {file_info['platform'].title()} File",
+                        data=file_data,
+                        file_name=f"anti_algorithm_{file_info['platform']}_{file_info['original_name']}",
+                        key=f"download_{i}"
+                    )
+        
+        # Batch download
+        create_batch_download_zip()
+        
+        # Reset batch button
+        if st.button("🔄 Process New Batch", use_container_width=True):
+            st.session_state.processed_files = []
+            st.session_state.current_platform = None
+            st.rerun()
+    
+    # Single file processing results and comparison section
+    elif st.session_state.processed_file and uploaded_file is not None:
         st.header("🔄 Original vs Processed Comparison")
         
         if st.session_state.file_details['category'] == 'image':
@@ -255,16 +397,38 @@ def main():
             st.session_state.current_platform = None
             st.rerun()
 
-def process_media_preset(uploaded_file, platform, file_details, processors):
-    """Unified function to process media with platform preset"""
+def update_progress(percentage, text):
+    """Update the progress bar and text"""
+    st.session_state.progress = percentage
+    st.session_state.progress_text = text
+    
+def process_media_preset(uploaded_file, platform, file_details, processors, options=None):
+    """Enhanced function to process media with platform preset and advanced features"""
+    if options is None:
+        options = {}
+    
     try:
-        # Create temp file with appropriate extension
+        st.session_state.processing = True
+        update_progress(0, "Initializing processing...")
+        
+        # Handle different video formats and convert to MP4 if needed
+        original_format = file_details['name'].split('.')[-1].lower()
         if file_details['category'] == 'video':
-            suffix = '.mp4'
+            if original_format in ['mov', 'avi', 'mkv', 'webm']:
+                suffix = f'.{original_format}'
+                output_suffix = '.mp4'
+                needs_conversion = True
+            else:
+                suffix = '.mp4'
+                output_suffix = '.mp4'
+                needs_conversion = False
             processor = processors['video']
         else:
             suffix = '.jpg' 
             processor = processors['image']
+            needs_conversion = False
+        
+        update_progress(10, "Reading file data...")
         
         # Reset file pointer and read data
         uploaded_file.seek(0)
@@ -275,12 +439,49 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
             temp_input.write(file_data)
             temp_input_path = temp_input.name
         
-        # Process the file
-        output_path = processor.apply_preset(temp_input_path, platform)
+        update_progress(20, "Preparing advanced processing...")
+        
+        # Pre-processing: Auto-crop black borders if enabled
+        if options.get('auto_crop', False) and file_details['category'] == 'video':
+            update_progress(25, "Auto-cropping black borders...")
+            temp_input_path = auto_crop_video(temp_input_path)
+        
+        # Pre-processing: Watermark removal if enabled
+        if options.get('watermark_removal', False):
+            update_progress(30, "Attempting watermark removal...")
+            temp_input_path = remove_watermarks(temp_input_path, file_details['category'])
+        
+        # Format conversion if needed
+        if needs_conversion:
+            update_progress(35, f"Converting {original_format.upper()} to MP4...")
+            temp_input_path = convert_video_format(temp_input_path, output_suffix)
+        
+        update_progress(40, f"Applying MAXIMUM {platform.upper()} protection...")
+        
+        # Process the file with enhanced settings
+        if file_details['category'] == 'video':
+            # Pass audio quality setting to video processor
+            if hasattr(processor, 'set_audio_quality'):
+                processor.set_audio_quality(options.get('audio_quality', '192k'))
+            output_path = processor.apply_preset(temp_input_path, platform)
+        else:
+            output_path = processor.apply_preset(temp_input_path, platform)
+        
+        update_progress(70, "Optimizing file size...")
+        
+        # Apply file size optimization if specified
+        size_limit = options.get('size_limit', 'No Limit')
+        if size_limit != 'No Limit':
+            output_path = optimize_file_size(output_path, size_limit, file_details['category'])
+        
+        update_progress(90, "Finalizing...")
         
         # Update session state
         st.session_state.processed_file = output_path
-        st.success(f"✅ Successfully processed {file_details['type'].lower()} for {platform.title()} with advanced algorithm evasion!")
+        st.session_state.processing = False
+        update_progress(100, "Processing complete!")
+        
+        st.success(f"✅ Successfully processed {file_details['type'].lower()} for {platform.title()} with MAXIMUM algorithm evasion!")
         
         # Show detailed changes made with research-based techniques
         st.info(f"""
@@ -467,6 +668,328 @@ def process_custom_command(uploaded_file, command_string, file_details, processo
             except:
                 pass
         st.rerun()
+
+def process_batch_files(uploaded_files, platform, processors, options):
+    """Process multiple files in batch mode with progress tracking"""
+    try:
+        st.session_state.processing = True
+        st.session_state.processed_files = []
+        total_files = len(uploaded_files)
+        
+        for i, uploaded_file in enumerate(uploaded_files):
+            file_details = processors['file_utils'].get_file_info(uploaded_file)
+            
+            update_progress(
+                (i / total_files) * 100, 
+                f"Processing file {i+1}/{total_files}: {file_details['name']}"
+            )
+            
+            # Process each file
+            output_path = process_single_file_batch(uploaded_file, platform, file_details, processors, options)
+            if output_path:
+                st.session_state.processed_files.append({
+                    'original_name': file_details['name'],
+                    'processed_path': output_path,
+                    'platform': platform
+                })
+        
+        st.session_state.processing = False
+        update_progress(100, f"Batch processing complete! {len(st.session_state.processed_files)} files processed")
+        
+        # Show batch results
+        st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {platform.title()}!")
+        
+        # Download all files as zip
+        if st.session_state.processed_files:
+            create_batch_download_zip()
+            
+    except Exception as e:
+        st.session_state.processing = False
+        st.error(f"❌ Batch processing failed: {str(e)}")
+
+def process_single_file_batch(uploaded_file, platform, file_details, processors, options):
+    """Process a single file in batch mode (simplified version without UI updates)"""
+    try:
+        # Similar to process_media_preset but without progress updates for each file
+        original_format = file_details['name'].split('.')[-1].lower()
+        if file_details['category'] == 'video':
+            suffix = f'.{original_format}' if original_format in ['mov', 'avi', 'mkv', 'webm'] else '.mp4'
+            processor = processors['video']
+        else:
+            suffix = '.jpg'
+            processor = processors['image']
+        
+        uploaded_file.seek(0)
+        file_data = uploaded_file.read()
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_input:
+            temp_input.write(file_data)
+            temp_input_path = temp_input.name
+        
+        # Apply preprocessing options
+        if options.get('auto_crop', False) and file_details['category'] == 'video':
+            temp_input_path = auto_crop_video(temp_input_path)
+        
+        if options.get('watermark_removal', False):
+            temp_input_path = remove_watermarks(temp_input_path, file_details['category'])
+        
+        # Process with preset
+        output_path = processor.apply_preset(temp_input_path, platform)
+        
+        # Apply size optimization
+        size_limit = options.get('size_limit', 'No Limit')
+        if size_limit != 'No Limit':
+            output_path = optimize_file_size(output_path, size_limit, file_details['category'])
+        
+        return output_path
+        
+    except Exception as e:
+        st.warning(f"⚠️ Failed to process {file_details['name']}: {str(e)}")
+        return None
+
+def convert_video_format(input_path, output_suffix):
+    """Convert video to MP4 format using FFmpeg"""
+    try:
+        import ffmpeg
+        output_path = input_path.replace(input_path.split('.')[-1], 'mp4')
+        
+        (
+            ffmpeg
+            .input(input_path)
+            .output(output_path, vcodec='libx264', acodec='aac')
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        
+        # Cleanup original file
+        os.unlink(input_path)
+        return output_path
+        
+    except Exception as e:
+        st.warning(f"⚠️ Format conversion failed, using original: {str(e)}")
+        return input_path
+
+def auto_crop_video(input_path):
+    """Auto-detect and crop black borders from video"""
+    try:
+        import ffmpeg
+        output_path = input_path.replace('.mp4', '_cropped.mp4')
+        
+        # Use FFmpeg's cropdetect filter to detect black borders
+        (
+            ffmpeg
+            .input(input_path)
+            .filter('cropdetect', limit=0.1, round=2)
+            .output(output_path, vcodec='libx264', acodec='copy')
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        
+        os.unlink(input_path)
+        return output_path
+        
+    except Exception as e:
+        st.warning(f"⚠️ Auto-crop failed, using original: {str(e)}")
+        return input_path
+
+def remove_watermarks(input_path, media_type):
+    """Attempt to remove watermarks using blur and inpainting techniques"""
+    try:
+        if media_type == 'video':
+            return remove_video_watermarks(input_path)
+        else:
+            return remove_image_watermarks(input_path)
+    except Exception as e:
+        st.warning(f"⚠️ Watermark removal failed, using original: {str(e)}")
+        return input_path
+
+def remove_video_watermarks(input_path):
+    """Remove watermarks from video using FFmpeg filters"""
+    try:
+        import ffmpeg
+        output_path = input_path.replace('.mp4', '_nowatermark.mp4')
+        
+        # Apply delogo filter to common watermark positions
+        (
+            ffmpeg
+            .input(input_path)
+            .filter('delogo', x=10, y=10, w=100, h=50)  # Top-left corner
+            .filter('delogo', x='W-110', y=10, w=100, h=50)  # Top-right corner
+            .output(output_path, vcodec='libx264', acodec='copy')
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        
+        os.unlink(input_path)
+        return output_path
+        
+    except Exception as e:
+        return input_path
+
+def remove_image_watermarks(input_path):
+    """Remove watermarks from images using simple blur techniques"""
+    try:
+        from PIL import Image, ImageFilter
+        
+        image = Image.open(input_path)
+        width, height = image.size
+        
+        # Create a copy for processing
+        processed_image = image.copy()
+        
+        # Apply gentle blur to corner areas where watermarks typically appear
+        corner_size = min(width, height) // 8
+        
+        # Top-left corner
+        corner = image.crop((0, 0, corner_size, corner_size))
+        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
+        processed_image.paste(blurred_corner, (0, 0))
+        
+        # Top-right corner
+        corner = image.crop((width-corner_size, 0, width, corner_size))
+        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
+        processed_image.paste(blurred_corner, (width-corner_size, 0))
+        
+        # Bottom corners
+        corner = image.crop((0, height-corner_size, corner_size, height))
+        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
+        processed_image.paste(blurred_corner, (0, height-corner_size))
+        
+        corner = image.crop((width-corner_size, height-corner_size, width, height))
+        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
+        processed_image.paste(blurred_corner, (width-corner_size, height-corner_size))
+        
+        output_path = input_path.replace(input_path.split('.')[-1], f'nowatermark.{input_path.split(".")[-1]}')
+        processed_image.save(output_path, quality=95)
+        
+        os.unlink(input_path)
+        return output_path
+        
+    except Exception as e:
+        return input_path
+
+def optimize_file_size(input_path, size_limit_str, media_type):
+    """Optimize file size to meet specified limits"""
+    try:
+        # Parse size limit
+        size_limit_mb = int(size_limit_str.replace('MB', ''))
+        size_limit_bytes = size_limit_mb * 1024 * 1024
+        
+        # Check current size
+        current_size = os.path.getsize(input_path)
+        
+        if current_size <= size_limit_bytes:
+            return input_path  # Already within limit
+        
+        if media_type == 'video':
+            return optimize_video_size(input_path, size_limit_bytes)
+        else:
+            return optimize_image_size(input_path, size_limit_bytes)
+            
+    except Exception as e:
+        st.warning(f"⚠️ Size optimization failed: {str(e)}")
+        return input_path
+
+def optimize_video_size(input_path, target_size_bytes):
+    """Optimize video size by adjusting bitrate"""
+    try:
+        import ffmpeg
+        
+        # Get video duration
+        probe = ffmpeg.probe(input_path)
+        duration = float(probe['streams'][0]['duration'])
+        
+        # Calculate target bitrate (with 10% buffer)
+        target_bitrate = int((target_size_bytes * 8 * 0.9) / duration)
+        
+        output_path = input_path.replace('.mp4', '_optimized.mp4')
+        
+        (
+            ffmpeg
+            .input(input_path)
+            .output(output_path, 
+                   vcodec='libx264', 
+                   acodec='aac',
+                   **{'b:v': f'{target_bitrate}', 'b:a': '128k'})
+            .overwrite_output()
+            .run(quiet=True)
+        )
+        
+        os.unlink(input_path)
+        return output_path
+        
+    except Exception as e:
+        return input_path
+
+def optimize_image_size(input_path, target_size_bytes):
+    """Optimize image size by adjusting quality"""
+    try:
+        from PIL import Image
+        
+        image = Image.open(input_path)
+        
+        # Try different quality levels
+        for quality in [85, 75, 65, 55, 45]:
+            output_path = input_path.replace(input_path.split('.')[-1], f'optimized.jpg')
+            image.save(output_path, 'JPEG', quality=quality)
+            
+            if os.path.getsize(output_path) <= target_size_bytes:
+                os.unlink(input_path)
+                return output_path
+        
+        # If still too large, resize the image
+        width, height = image.size
+        for scale in [0.9, 0.8, 0.7, 0.6]:
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            resized = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            output_path = input_path.replace(input_path.split('.')[-1], f'optimized.jpg')
+            resized.save(output_path, 'JPEG', quality=75)
+            
+            if os.path.getsize(output_path) <= target_size_bytes:
+                os.unlink(input_path)
+                return output_path
+        
+        return input_path
+        
+    except Exception as e:
+        return input_path
+
+def create_batch_download_zip():
+    """Create a ZIP file with all processed files for batch download"""
+    try:
+        import zipfile
+        
+        zip_path = tempfile.mktemp(suffix='.zip')
+        
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file_info in st.session_state.processed_files:
+                file_path = file_info['processed_path']
+                original_name = file_info['original_name']
+                platform = file_info['platform']
+                
+                # Create a clean filename for the zip
+                name_parts = original_name.split('.')
+                clean_name = f"anti_algorithm_{platform}_{'.'.join(name_parts[:-1])}.{name_parts[-1]}"
+                
+                zipf.write(file_path, clean_name)
+        
+        # Provide download button for the zip
+        with open(zip_path, 'rb') as zip_file:
+            st.download_button(
+                label=f"📦 Download All {len(st.session_state.processed_files)} Files (ZIP)",
+                data=zip_file.read(),
+                file_name=f"anti_algorithm_batch_{st.session_state.current_platform}.zip",
+                mime="application/zip",
+                use_container_width=True,
+                type="primary"
+            )
+        
+        os.unlink(zip_path)
+        
+    except Exception as e:
+        st.error(f"❌ Failed to create batch download: {str(e)}")
 
 if __name__ == "__main__":
     main()
