@@ -314,7 +314,17 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
         - File hash randomization through structure manipulation
         - Fake timestamp and device signature generation
         
-        **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes + undetectable file fingerprint
+        **Layer 7: Format Conversion Chains** (Multi-stage file transformation)
+        - JPEG→PNG→JPEG / JPEG→BMP→JPEG / JPEG→TIFF→JPEG conversion chains
+        - Multiple quality and compression method variations
+        - Progressive and subsampling randomization
+        
+        **Layer 8: Batch Processing Protection** (Session pattern prevention)
+        - Tracks recent processing patterns to avoid repetition
+        - Forces different techniques for consecutive uploads
+        - Prevents algorithm pattern recognition across multiple posts
+        
+        **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes + undetectable file fingerprint + batch protection
         """)
         
     except Exception as e:

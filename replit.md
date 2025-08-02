@@ -25,13 +25,15 @@ Preferred communication style: Simple, everyday language.
 - **File Management**: `FileUtils` class for file type detection and metadata extraction
 
 ### Processing Pipeline
-- **6-Layer Anti-Algorithm Framework**: Research-based 2025 system implementing multiple evasion techniques per upload
+- **8-Layer Anti-Algorithm Framework**: Research-based 2025 system implementing multiple evasion techniques per upload
   - Layer 1: FGS-Audio inspired adversarial perturbations with content-adaptive gradients
   - Layer 2: Reversible steganography with texture-aware LSB modifications
   - Layer 3: Hybrid DCT+GAN frequency domain manipulation in 8x8 JPEG blocks
   - Layer 4: Triple-stage processing (psycho-visual, YUV transform, error correction)
   - Layer 5: Platform-specific targeting (TikTok/Instagram/YouTube algorithm optimization)
   - Layer 6: Metadata & file structure manipulation (EXIF stripping, fake camera data, file hash randomization)
+  - Layer 7: Format conversion chains (multi-stage file transformations to break additional fingerprinting)
+  - Layer 8: Batch processing protection (session pattern prevention across multiple uploads)
 - **Dynamic Variation System**: Time-based and randomized parameter selection to prevent pattern detection
 - **Advanced Audio Processing**: Triple-stage audio manipulation with sample rate shifts, EQ filtering, and volume micro-adjustments
 - **Custom Command System**: 47+ implemented image effects with full processing logic for manual control
@@ -72,5 +74,7 @@ Preferred communication style: Simple, everyday language.
 - **Custom Effects**: Completed implementation of all 47 image processing effects with full visual logic
 - **Metadata Manipulation**: Added comprehensive EXIF stripping, fake camera metadata injection, and file structure randomization
 - **File Fingerprint Evasion**: Implemented invisible file header modifications and random padding insertion for hash evasion
+- **Format Conversion Chains**: Added 5 different multi-stage conversion methods (JPEG→PNG→JPEG, quality chains, compression variations)
+- **Batch Protection System**: Implemented session memory to prevent pattern detection across consecutive uploads
 
 The application operates entirely offline without external API dependencies, processing all media locally using system resources.

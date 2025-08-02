@@ -12,6 +12,8 @@ import datetime
 class ImageProcessor:
     def __init__(self):
         self.temp_dir = tempfile.gettempdir()
+        self.session_history = []  # Track processing patterns to avoid repetition
+        self.max_history = 10      # Remember last 10 processing sessions
     
     def apply_preset(self, input_path, platform):
         """Apply platform-specific preset with dynamic anti-algorithm variations"""
@@ -58,6 +60,9 @@ class ImageProcessor:
                 # Dynamic quality and compression to prevent pattern detection
                 quality = random.randint(78, 87)
                 img.save(output_path, 'JPEG', quality=quality, optimize=True)
+                
+                # Apply format conversion chain for additional evasion
+                output_path = self._apply_format_conversion_chain(output_path, variation)
                 
                 # Post-process file for header manipulation
                 self._manipulate_file_structure(output_path)
@@ -742,6 +747,9 @@ class ImageProcessor:
         # Use current time and random seed for variation selection
         variation_seed = int(time.time()) % 5 + random.randint(1, 3)
         
+        # Apply batch processing protection
+        variation_seed = self._apply_batch_protection(variation_seed, platform)
+        
         variations = {
             'tiktok': {
                 'type': variation_seed % 5,
@@ -1060,6 +1068,9 @@ class ImageProcessor:
                 quality = random.randint(80, 90)
                 img.save(output_path, 'JPEG', quality=quality, optimize=True)
                 
+                # Apply format conversion chain for additional evasion
+                output_path = self._apply_format_conversion_chain(output_path, variation)
+                
                 # Post-process file for header manipulation
                 self._manipulate_file_structure(output_path)
                 return output_path
@@ -1089,6 +1100,9 @@ class ImageProcessor:
                 # Dynamic quality for YouTube
                 quality = random.randint(75, 85)
                 img.save(output_path, 'JPEG', quality=quality, optimize=True)
+                
+                # Apply format conversion chain for additional evasion
+                output_path = self._apply_format_conversion_chain(output_path, variation)
                 
                 # Post-process file for header manipulation
                 self._manipulate_file_structure(output_path)
@@ -1331,3 +1345,195 @@ class ImageProcessor:
             # Better to have working image without header manipulation
             # than to fail the entire process
             pass
+    
+    def _apply_batch_protection(self, variation_seed, platform):
+        """Prevent pattern detection across multiple uploads in the same session"""
+        # Create unique fingerprint for this processing session
+        session_fingerprint = {
+            'platform': platform,
+            'variation_type': variation_seed % 5,
+            'timestamp': int(time.time() / 300)  # 5-minute windows
+        }
+        
+        # Check if this combination was used recently
+        recent_similar = [h for h in self.session_history 
+                         if h['platform'] == platform and 
+                         h['variation_type'] == session_fingerprint['variation_type'] and
+                         abs(h['timestamp'] - session_fingerprint['timestamp']) <= 2]
+        
+        # If similar pattern found recently, modify the variation
+        if recent_similar:
+            # Force a different variation type
+            available_types = list(range(5))
+            used_types = [h['variation_type'] for h in recent_similar]
+            available_types = [t for t in available_types if t not in used_types]
+            
+            if available_types:
+                new_type = random.choice(available_types)
+                variation_seed = (variation_seed // 5) * 5 + new_type
+            else:
+                # All types used recently, add random offset
+                variation_seed += random.randint(10, 50)
+        
+        # Add this session to history
+        self.session_history.append(session_fingerprint)
+        
+        # Keep only recent history
+        if len(self.session_history) > self.max_history:
+            self.session_history = self.session_history[-self.max_history:]
+        
+        return variation_seed
+    
+    def _apply_format_conversion_chain(self, input_path, variation):
+        """Apply format conversion chain to break additional fingerprinting methods"""
+        try:
+            # Determine conversion chain based on variation
+            chain_types = [
+                'jpg_png_jpg',      # JPEG → PNG → JPEG
+                'jpg_bmp_jpg',      # JPEG → BMP → JPEG  
+                'jpg_tiff_jpg',     # JPEG → TIFF → JPEG
+                'quality_chain',    # Multiple quality conversions
+                'compression_chain' # Different compression methods
+            ]
+            
+            chain_type = chain_types[variation['type'] % len(chain_types)]
+            
+            if chain_type == 'jpg_png_jpg':
+                return self._jpg_png_jpg_chain(input_path, variation)
+            elif chain_type == 'jpg_bmp_jpg':
+                return self._jpg_bmp_jpg_chain(input_path, variation)
+            elif chain_type == 'jpg_tiff_jpg':
+                return self._jpg_tiff_jpg_chain(input_path, variation)
+            elif chain_type == 'quality_chain':
+                return self._quality_conversion_chain(input_path, variation)
+            else:  # compression_chain
+                return self._compression_conversion_chain(input_path, variation)
+                
+        except Exception as e:
+            # If conversion fails, return original path
+            return input_path
+    
+    def _jpg_png_jpg_chain(self, input_path, variation):
+        """JPEG → PNG → JPEG conversion chain"""
+        try:
+            # Step 1: JPEG → PNG
+            png_path = input_path.replace('.jpg', '_temp.png').replace('.jpeg', '_temp.png')
+            with Image.open(input_path) as img:
+                # PNG conversion with random compression level
+                img.save(png_path, 'PNG', compress_level=random.randint(1, 9))
+            
+            # Step 2: PNG → JPEG with different settings
+            final_path = input_path.replace('_temp.png', '_final.jpg')
+            with Image.open(png_path) as img:
+                # Convert back to JPEG with randomized settings
+                quality = random.randint(82, 92)
+                img.save(final_path, 'JPEG', quality=quality, optimize=True)
+            
+            # Cleanup temporary PNG
+            os.remove(png_path)
+            
+            # Replace original file
+            os.replace(final_path, input_path)
+            return input_path
+            
+        except Exception:
+            return input_path
+    
+    def _jpg_bmp_jpg_chain(self, input_path, variation):
+        """JPEG → BMP → JPEG conversion chain"""
+        try:
+            # Step 1: JPEG → BMP (uncompressed)
+            bmp_path = input_path.replace('.jpg', '_temp.bmp').replace('.jpeg', '_temp.bmp')
+            with Image.open(input_path) as img:
+                img.save(bmp_path, 'BMP')
+            
+            # Step 2: BMP → JPEG with different settings
+            final_path = input_path.replace('_temp.bmp', '_final.jpg')
+            with Image.open(bmp_path) as img:
+                quality = random.randint(80, 88)
+                img.save(final_path, 'JPEG', quality=quality, optimize=True)
+            
+            # Cleanup
+            os.remove(bmp_path)
+            os.replace(final_path, input_path)
+            return input_path
+            
+        except Exception:
+            return input_path
+    
+    def _jpg_tiff_jpg_chain(self, input_path, variation):
+        """JPEG → TIFF → JPEG conversion chain"""
+        try:
+            # Step 1: JPEG → TIFF
+            tiff_path = input_path.replace('.jpg', '_temp.tiff').replace('.jpeg', '_temp.tiff')
+            with Image.open(input_path) as img:
+                img.save(tiff_path, 'TIFF', compression='lzw')
+            
+            # Step 2: TIFF → JPEG
+            final_path = input_path.replace('_temp.tiff', '_final.jpg')
+            with Image.open(tiff_path) as img:
+                quality = random.randint(79, 89)
+                img.save(final_path, 'JPEG', quality=quality, optimize=True)
+            
+            # Cleanup
+            os.remove(tiff_path)
+            os.replace(final_path, input_path)
+            return input_path
+            
+        except Exception:
+            return input_path
+    
+    def _quality_conversion_chain(self, input_path, variation):
+        """Multiple quality conversion chain"""
+        try:
+            # Step 1: Lower quality
+            temp_path1 = input_path.replace('.jpg', '_temp1.jpg').replace('.jpeg', '_temp1.jpg')
+            with Image.open(input_path) as img:
+                quality1 = random.randint(70, 85)
+                img.save(temp_path1, 'JPEG', quality=quality1)
+            
+            # Step 2: Higher quality
+            temp_path2 = input_path.replace('.jpg', '_temp2.jpg').replace('.jpeg', '_temp2.jpg')
+            with Image.open(temp_path1) as img:
+                quality2 = random.randint(85, 95)
+                img.save(temp_path2, 'JPEG', quality=quality2, optimize=True)
+            
+            # Step 3: Final quality
+            with Image.open(temp_path2) as img:
+                final_quality = random.randint(80, 90)
+                img.save(input_path, 'JPEG', quality=final_quality, optimize=True)
+            
+            # Cleanup
+            os.remove(temp_path1)
+            os.remove(temp_path2)
+            return input_path
+            
+        except Exception:
+            return input_path
+    
+    def _compression_conversion_chain(self, input_path, variation):
+        """Different compression method chain"""
+        try:
+            # Step 1: Save with different compression options
+            temp_path = input_path.replace('.jpg', '_temp.jpg').replace('.jpeg', '_temp.jpg')
+            with Image.open(input_path) as img:
+                # Use different subsampling and optimization
+                subsampling = random.choice([0, 1, 2])  # Different chroma subsampling
+                img.save(temp_path, 'JPEG', 
+                        quality=random.randint(82, 92),
+                        optimize=True,
+                        subsampling=subsampling)
+            
+            # Step 2: Final save with different settings
+            with Image.open(temp_path) as img:
+                img.save(input_path, 'JPEG', 
+                        quality=random.randint(85, 95),
+                        optimize=True,
+                        progressive=random.choice([True, False]))
+            
+            # Cleanup
+            os.remove(temp_path)
+            return input_path
+            
+        except Exception:
+            return input_path
