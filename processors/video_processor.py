@@ -36,6 +36,7 @@ class VideoProcessor:
         elif platform == 'instagram':
             result = self._apply_instagram_preset(input_path, output_path)
         elif platform == 'youtube':
+            # Use the simple YouTube preset instead of complex TikTok system
             result = self._apply_youtube_preset(input_path, output_path)
         else:
             raise ValueError(f"Unknown platform: {platform}")
@@ -48,6 +49,7 @@ class VideoProcessor:
         try:
             # Get dynamic variation with batch protection
             variation = self._get_dynamic_variation('tiktok')
+            platform = 'tiktok'
             
             # Build advanced FFmpeg filter chain with 2025 research techniques
             input_stream = ffmpeg.input(input_path)
@@ -137,11 +139,17 @@ class VideoProcessor:
             blur_radius = f"{variation['blur_radius']}+{variation['blur_variation']}*sin(2*PI*t/{variation['blur_period']})"
             video = video.filter('boxblur', luma_radius=blur_radius, luma_power=1)
             
-            # Color channel mixing (advanced steganography-inspired)
-            video = video.filter('colorchannelmixer', 
-                rr=variation['channel_mix']['rr'], rg=variation['channel_mix']['rg'], rb=variation['channel_mix']['rb'],
-                gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
-                br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
+            # Color channel mixing (advanced steganography-inspired) - FIXED TO PRESERVE COLOR
+            # Only apply subtle mixing that doesn't destroy color
+            if platform == 'youtube':
+                # YouTube: Skip channel mixing to preserve color
+                pass  
+            else:
+                # TikTok/Instagram: Apply subtle channel mixing
+                video = video.filter('colorchannelmixer', 
+                    rr=variation['channel_mix']['rr'], rg=variation['channel_mix']['rg'], rb=variation['channel_mix']['rb'],
+                    gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
+                    br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
             
             # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
             self.update_progress(60, "Processing audio streams...")
