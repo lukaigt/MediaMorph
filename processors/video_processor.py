@@ -187,66 +187,39 @@ class VideoProcessor:
                 'pix_fmt': variation['pixel_format']
             }
             
-            # === LAYER 8: ADVANCED CONTAINER FORMAT CHAIN ===
-            # Multi-stage encoding with keyframe manipulation
-            
-            # Stage 1: Intermediate encoding with custom keyframe intervals
-            temp_output = output_path.replace('.mp4', '_temp.mkv')
-            intermediate_params = encoding_params.copy()
-            intermediate_params.update({
+            # === LAYER 8: SINGLE-STAGE ENCODING (AUDIO PRESERVATION) ===
+            # Direct encoding to preserve audio properly
+            final_params = encoding_params.copy()
+            final_params.update({
                 'g': variation['keyframe_interval'],  # Custom keyframe interval
                 'sc_threshold': variation['scene_threshold'],  # Scene change detection
-                'keyint_min': variation['min_keyframe_interval']
-            })
-            
-            (
-                ffmpeg
-                .output(video, audio, temp_output, **intermediate_params)
-                .overwrite_output()
-                .run(quiet=True)
-            )
-            
-            # Stage 2: Final encoding with different compression settings
-            final_params = {
-                'acodec': 'aac',
-                'vcodec': 'libx264', 
-                'crf': variation['final_crf'],
-                'preset': variation['final_preset'],
-                'profile:v': variation['final_profile'],
-                'b:a': variation['audio_bitrate'],  # CRITICAL: Audio bitrate for final stage
-                'movflags': '+faststart',
-                'metadata': f"creation_time={variation['fake_creation_time']}",
-                # Advanced compression settings
+                'keyint_min': variation['min_keyframe_interval'],
                 'x264opts': f"keyint={variation['final_keyframe_interval']}:min-keyint={variation['final_min_keyframe']}:bframes={variation['b_frames']}",
                 'bf': variation['b_frames'],  # B-frame count
-                'refs': variation['ref_frames']  # Reference frame count
-            }
+                'refs': variation['ref_frames'],  # Reference frame count
+                'metadata': f"creation_time={variation['fake_creation_time']}"
+            })
             
+            # Single encoding stage to avoid audio loss
             (
                 ffmpeg
-                .input(temp_output)
-                .output(output_path, **final_params)
+                .output(video, audio, output_path, **final_params)
                 .overwrite_output()
-                .run(quiet=True)
+                .run(quiet=False)  # Show FFmpeg output for debugging
             )
-            
-            # Clean up temporary file
-            os.remove(temp_output)
             
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in TikTok preset: {e}")
-            
-        except ffmpeg.Error as e:
-            raise Exception(f"FFmpeg error in TikTok advanced preset: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
         """Instagram: Advanced square processing with heavy modifications"""
         try:
-            (
-                ffmpeg
-                .input(input_path)
-                .video
+            # Process video and audio separately, then combine
+            input_stream = ffmpeg.input(input_path)
+            
+            # Video processing
+            video = (input_stream.video
                 .filter('crop', 'min(iw,ih)', 'min(iw,ih)')  # Square crop
                 .filter('eq', saturation=1.3, brightness=0.08, contrast=1.15, gamma=1.05)  # Enhanced color adjustments
                 .filter('hue', h=2)  # Slight hue shift
@@ -255,7 +228,15 @@ class VideoProcessor:
                 .filter('colorbalance', rm=0.05, gm=-0.03, bm=0.02)  # Color balance
                 .filter('eq', saturation=1.4)  # Enhanced saturation instead of vibrance
                 .filter('scale', 'iw*0.999', 'ih*0.999')  # Tiny scale change
-                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M', 'b:a': '192k'})
+            )
+            
+            # Audio processing (keep original)
+            audio = input_stream.audio
+            
+            # Combine video and audio
+            (
+                ffmpeg
+                .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M', 'b:a': '192k'})
                 .overwrite_output()
                 .run(quiet=True)
             )
@@ -266,10 +247,11 @@ class VideoProcessor:
     def _apply_youtube_preset(self, input_path, output_path):
         """YouTube: Advanced landscape processing with heavy algorithm evasion"""
         try:
-            (
-                ffmpeg
-                .input(input_path)
-                .video
+            # Process video and audio separately, then combine
+            input_stream = ffmpeg.input(input_path)
+            
+            # Video processing
+            video = (input_stream.video
                 .filter('pad', 'max(iw,ih*16/9)', 'max(iw*9/16,ih)', '(ow-iw)/2', '(oh-ih)/2', color='#010101')  # 16:9 letterbox with near-black
                 .filter('eq', saturation=1.4, brightness=0.03, contrast=1.12, gamma=0.98)  # Enhanced adjustments
                 .filter('hue', h=-1, s=0.05)  # Hue and saturation shift
@@ -278,7 +260,15 @@ class VideoProcessor:
                 .filter('colorbalance', rs=-0.02, gs=0.03, bs=-0.01)  # Color balance
                 .filter('eq', gamma=0.95)  # Gamma adjustment instead of curves
                 .filter('scale', 'iw*1.001', 'ih*1.001')  # Minimal scale to change hash
-                .output(output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M', 'b:a': '192k'})
+            )
+            
+            # Audio processing (keep original)
+            audio = input_stream.audio
+            
+            # Combine video and audio
+            (
+                ffmpeg
+                .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M', 'b:a': '192k'})
                 .overwrite_output()
                 .run(quiet=True)
             )
