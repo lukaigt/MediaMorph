@@ -128,28 +128,44 @@ class VideoProcessor:
                 gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
                 br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
             
-            # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
-            audio = input_stream.audio
-            
-            # Only apply minimal, safe audio processing to preserve audio integrity
+            # === LAYER 6: AUDIO PROCESSING WITH STREAM DETECTION ===
+            # Check if input has audio stream first
             try:
-                # Stage 1: Very subtle volume adjustment only (safest operation)
-                audio = audio.filter('volume', variation['volume_factor'])
-                
-                # Stage 2: Only apply EQ if safe parameters
-                if variation.get('eq_bands') and len(variation['eq_bands']) > 0:
-                    # Apply only the first, safest EQ band
-                    safe_eq = variation['eq_bands'][0]
-                    if abs(safe_eq['gain']) < 0.1:  # Only very small adjustments
-                        audio = audio.filter('equalizer', f=safe_eq['freq'], g=safe_eq['gain'], w=safe_eq['width'])
-                
-                # Skip all other complex audio processing that can cause audio loss
-                # (sample rate changes, phase manipulation, silence insertion, compression)
-                
-            except Exception as audio_error:
-                # If any audio processing fails, fall back to original audio
-                print(f"Audio processing failed, using original audio: {audio_error}")
-                audio = input_stream.audio
+                probe = ffmpeg.probe(input_path)
+                has_audio = any(stream['codec_type'] == 'audio' for stream in probe['streams'])
+            except:
+                has_audio = False
+                print("Warning: Unable to probe input file for audio streams")
+            
+            audio = None
+            if has_audio:
+                try:
+                    audio = input_stream.audio
+                    
+                    # Only apply minimal, safe audio processing to preserve audio integrity
+                    # Stage 1: Very subtle volume adjustment only (safest operation)
+                    audio = audio.filter('volume', variation['volume_factor'])
+                    
+                    # Stage 2: Only apply EQ if safe parameters
+                    if variation.get('eq_bands') and len(variation['eq_bands']) > 0:
+                        # Apply only the first, safest EQ band
+                        safe_eq = variation['eq_bands'][0]
+                        if abs(safe_eq['gain']) < 0.1:  # Only very small adjustments
+                            audio = audio.filter('equalizer', f=safe_eq['freq'], g=safe_eq['gain'], w=safe_eq['width'])
+                    
+                    # Skip all other complex audio processing that can cause audio loss
+                    # (sample rate changes, phase manipulation, silence insertion, compression)
+                    
+                except Exception as audio_error:
+                    # If any audio processing fails, fall back to original audio
+                    print(f"Audio processing failed, using original audio: {audio_error}")
+                    try:
+                        audio = input_stream.audio
+                    except:
+                        audio = None
+                        has_audio = False
+            else:
+                print("No audio stream found in input - processing video only")
             
             # === LAYER 7: METADATA & CONTAINER MANIPULATION ===
             # Advanced encoding with randomized parameters
@@ -179,45 +195,75 @@ class VideoProcessor:
                 'metadata': f"creation_time={variation['fake_creation_time']}"
             })
             
+            # Add audio parameters only if audio exists
+            if has_audio and audio is not None:
+                final_params.update({
+                    'acodec': 'aac',
+                    'ar': 44100,  # Ensure sample rate
+                    'ac': 2,      # Ensure stereo
+                    'b:a': self.audio_quality
+                })
+            
             # Single encoding stage to avoid audio loss with better error handling
             try:
-                # Ensure audio codec is explicitly set to preserve audio
-                final_params['acodec'] = 'aac'
-                final_params['ar'] = 44100  # Ensure sample rate
-                final_params['ac'] = 2      # Ensure stereo
-                
-                (
-                    ffmpeg
-                    .output(video, audio, output_path, **final_params)
-                    .overwrite_output()
-                    .run(quiet=False, capture_stdout=True, capture_stderr=True)
-                )
-                
-                # Verify audio is present in output
-                probe = ffmpeg.probe(output_path)
-                audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
-                if not audio_streams:
-                    print("Warning: No audio stream detected in output, retrying with simpler encoding...")
-                    # Fallback: Simple copy with minimal processing
+                if has_audio and audio is not None:
+                    # Encode with audio
                     (
                         ffmpeg
-                        .output(input_stream.video, input_stream.audio, output_path, 
-                               vcodec='libx264', acodec='aac', crf=23)
+                        .output(video, audio, output_path, **final_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run(quiet=False, capture_stdout=True, capture_stderr=True)
+                    )
+                    
+                    # Verify audio is present in output
+                    try:
+                        probe = ffmpeg.probe(output_path)
+                        audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
+                        if not audio_streams:
+                            print("Warning: No audio stream detected in output, retrying with simpler encoding...")
+                            # Fallback: Simple copy with minimal processing
+                            (
+                                ffmpeg
+                                .output(input_stream.video, input_stream.audio, output_path, 
+                                       vcodec='libx264', acodec='aac', crf=23)
+                                .overwrite_output()
+                                .run(quiet=False)
+                            )
+                    except:
+                        pass  # Continue even if verification fails
+                else:
+                    # Encode video only
+                    (
+                        ffmpeg
+                        .output(video, output_path, **final_params)
+                        .overwrite_output()
+                        .run(quiet=False, capture_stdout=True, capture_stderr=True)
                     )
                     
             except ffmpeg.Error as e:
                 print(f"FFmpeg encoding failed: {e}")
-                print("Attempting fallback encoding with original audio...")
-                # Ultimate fallback: preserve original audio completely
-                (
-                    ffmpeg
-                    .output(video, input_stream.audio, output_path, 
-                           vcodec='libx264', acodec='copy')
-                    .overwrite_output()
-                    .run(quiet=False)
-                )
+                # Ultimate fallback: Simple encoding
+                try:
+                    if has_audio:
+                        print("Attempting fallback encoding with original audio...")
+                        (
+                            ffmpeg
+                            .output(video, input_stream.audio, output_path, 
+                                   vcodec='libx264', acodec='copy')
+                            .overwrite_output()
+                            .run(quiet=False)
+                        )
+                    else:
+                        print("Attempting fallback encoding without audio...")
+                        (
+                            ffmpeg
+                            .output(video, output_path, vcodec='libx264', crf=23)
+                            .overwrite_output()
+                            .run(quiet=False)
+                        )
+                except Exception as fallback_error:
+                    print(f"Fallback encoding also failed: {fallback_error}")
+                    raise Exception(f"All encoding attempts failed: {e}")
             
             # Validate audio in output
             self._validate_audio_in_output(output_path)
@@ -243,28 +289,49 @@ class VideoProcessor:
                 .filter('scale', 'iw*0.999', 'ih*0.999')  # Tiny scale change
             )
             
-            # Audio processing (keep original)
-            audio = input_stream.audio
+            # Check for audio stream
+            try:
+                probe = ffmpeg.probe(input_path)
+                has_audio = any(stream['codec_type'] == 'audio' for stream in probe['streams'])
+            except:
+                has_audio = False
             
             # Combine video and audio with better error handling
             try:
-                (
-                    ffmpeg
-                    .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, 
-                           ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': self.audio_quality})
-                    .overwrite_output()
-                    .run(quiet=False)  # Show output for debugging
-                )
+                if has_audio:
+                    audio = input_stream.audio
+                    (
+                        ffmpeg
+                        .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, 
+                               ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': self.audio_quality})
+                        .overwrite_output()
+                        .run(quiet=False)  # Show output for debugging
+                    )
+                else:
+                    (
+                        ffmpeg
+                        .output(video, output_path, vcodec='libx264', crf=22, **{'b:v': '2.5M'})
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
             except ffmpeg.Error as e:
                 print(f"Instagram encoding failed, trying fallback: {e}")
-                # Fallback: copy audio to preserve it
-                (
-                    ffmpeg
-                    .output(video, input_stream.audio, output_path, 
-                           vcodec='libx264', acodec='copy', crf=22)
-                    .overwrite_output()
-                    .run(quiet=False)
-                )
+                # Fallback: simple encoding
+                if has_audio:
+                    (
+                        ffmpeg
+                        .output(video, input_stream.audio, output_path, 
+                               vcodec='libx264', acodec='copy', crf=22)
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
+                else:
+                    (
+                        ffmpeg
+                        .output(video, output_path, vcodec='libx264', crf=22)
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
             
             # Validate audio in output
             self._validate_audio_in_output(output_path)
@@ -290,18 +357,31 @@ class VideoProcessor:
                 .filter('scale', 'iw*1.001', 'ih*1.001')  # Minimal scale to change hash
             )
             
-            # Audio processing (keep original)
-            audio = input_stream.audio
+            # Check for audio stream
+            try:
+                probe = ffmpeg.probe(input_path)
+                has_audio = any(stream['codec_type'] == 'audio' for stream in probe['streams'])
+            except:
+                has_audio = False
             
             # Combine video and audio with better error handling
             try:
-                (
-                    ffmpeg
-                    .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21,
-                           ar=44100, ac=2, **{'b:v': '3M', 'b:a': self.audio_quality})
-                    .overwrite_output()
-                    .run(quiet=False)  # Show output for debugging
-                )
+                if has_audio:
+                    audio = input_stream.audio
+                    (
+                        ffmpeg
+                        .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=21,
+                               ar=44100, ac=2, **{'b:v': '3M', 'b:a': self.audio_quality})
+                        .overwrite_output()
+                        .run(quiet=False)  # Show output for debugging
+                    )
+                else:
+                    (
+                        ffmpeg
+                        .output(video, output_path, vcodec='libx264', crf=21, **{'b:v': '3M'})
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
             except ffmpeg.Error as e:
                 print(f"YouTube encoding failed, trying fallback: {e}")
                 # Fallback: copy audio to preserve it

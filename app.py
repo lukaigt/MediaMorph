@@ -297,18 +297,31 @@ def main():
         )
         
         if st.button("🚀 Apply Custom Edit", disabled=st.session_state.processing or not custom_command):
-            process_custom_command(uploaded_file, custom_command, file_details, processors)
+            options = {
+                'audio_quality': st.session_state.audio_quality,
+                'size_limit': size_limit,
+                'auto_crop': auto_crop,
+                'watermark_removal': watermark_removal
+            }
+            process_custom_command(uploaded_file, custom_command, file_details, processors, options)
         
-        # Processing indicator
+        # Processing indicator with progress bar
         if st.session_state.processing:
-            with st.spinner("Processing your media... Please wait."):
-                time.sleep(0.1)  # Small delay to show spinner
+            st.write("### 🔄 Processing...")
+            progress_bar = st.progress(st.session_state.progress / 100)
+            status_text = st.empty()
+            status_text.text(st.session_state.progress_text)
+            
+            # Auto-refresh while processing
+            time.sleep(0.5)
+            st.rerun()
         
     # Batch processing results section
     if st.session_state.processed_files and len(st.session_state.processed_files) > 0:
         st.header("📦 Batch Processing Results")
         
-        st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {st.session_state.current_platform.title()}!")
+        platform_name = st.session_state.current_platform.title() if st.session_state.current_platform else "Unknown"
+        st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {platform_name}!")
         
         # Show file list
         for i, file_info in enumerate(st.session_state.processed_files):
@@ -347,7 +360,8 @@ def main():
                 st.subheader("📸 Original Image")
                 st.image(uploaded_file, caption="Original", use_container_width=True)
             with col2:
-                st.subheader(f"✨ Processed ({st.session_state.current_platform.title() if st.session_state.current_platform else 'Custom'})")
+                platform_name = st.session_state.current_platform.title() if st.session_state.current_platform else 'Custom'
+                st.subheader(f"✨ Processed ({platform_name})")
                 st.image(st.session_state.processed_file, caption="Algorithm-Evaded", use_container_width=True)
         else:
             col1, col2 = st.columns(2)
@@ -355,7 +369,8 @@ def main():
                 st.subheader("🎥 Original Video")
                 st.video(uploaded_file)
             with col2:
-                st.subheader(f"✨ Processed ({st.session_state.current_platform.title() if st.session_state.current_platform else 'Custom'})")
+                platform_name = st.session_state.current_platform.title() if st.session_state.current_platform else 'Custom'
+                st.subheader(f"✨ Processed ({platform_name})")
                 st.video(st.session_state.processed_file)
         
         # Download section
@@ -454,7 +469,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
         # Format conversion if needed
         if needs_conversion:
             update_progress(35, f"Converting {original_format.upper()} to MP4...")
-            temp_input_path = convert_video_format(temp_input_path, output_suffix)
+            temp_input_path = convert_video_format(temp_input_path, '.mp4')
         
         update_progress(40, f"Applying MAXIMUM {platform.upper()} protection...")
         
@@ -603,7 +618,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
             except:
                 pass
 
-def process_custom_command(uploaded_file, command_string, file_details, processors):
+def process_custom_command(uploaded_file, command_string, file_details, processors, options=None):
     """Process custom command string and apply to media"""
     try:
         # Parse the command
