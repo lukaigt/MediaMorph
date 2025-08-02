@@ -65,6 +65,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Major Updates (August 2025)
 
+### Latest Critical Fixes (August 2, 2025)
+- **Audio Preservation Fixed**: Changed audio codec from 'aac' to 'copy' to preserve original audio without re-encoding corruption
+- **Progress Bar Implementation**: Added real-time progress tracking throughout video processing pipeline with visual feedback
+- **2025 Algorithm Research Integration**: Updated evasion techniques based on latest TikTok, Instagram, and YouTube algorithm research
+- **Enhanced Error Handling**: Improved audio stream detection and fallback systems for robust processing
+- **Research-Based Optimization**: Implemented homoglyph detection bypass, audio frequency manipulation, and temporal fingerprint evasion per 2025 studies
+
+## Recent Major Updates (August 2025)
+
 ### Advanced Features Implementation (Latest Update)
 - **Progress Tracking System**: Real-time 0-100% progress display during processing with descriptive status updates
 - **Batch Processing**: Multiple file upload and processing with ZIP download of all processed files

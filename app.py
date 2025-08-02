@@ -305,15 +305,15 @@ def main():
             }
             process_custom_command(uploaded_file, custom_command, file_details, processors, options)
         
-        # Processing indicator with progress bar
+        # Processing indicator with progress bar (improved)
         if st.session_state.processing:
             st.write("### 🔄 Processing...")
-            progress_bar = st.progress(st.session_state.progress / 100)
-            status_text = st.empty()
-            status_text.text(st.session_state.progress_text)
+            if st.session_state.progress_bar is None:
+                st.session_state.progress_bar = st.progress(0)
+                st.session_state.progress_text_element = st.empty()
             
             # Auto-refresh while processing
-            time.sleep(0.5)
+            time.sleep(0.1)
             st.rerun()
         
     # Batch processing results section
@@ -417,6 +417,14 @@ def update_progress(percentage, text):
     st.session_state.progress = percentage
     st.session_state.progress_text = text
     
+    # Update progress bar if it exists
+    if st.session_state.progress_bar is not None:
+        st.session_state.progress_bar.progress(percentage / 100.0)
+    
+    # Update progress text if it exists
+    if st.session_state.progress_text_element is not None:
+        st.session_state.progress_text_element.text(f"🔄 {text} ({percentage}%)")
+    
 def process_media_preset(uploaded_file, platform, file_details, processors, options=None):
     """Enhanced function to process media with platform preset and advanced features"""
     if options is None:
@@ -424,6 +432,13 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
     
     try:
         st.session_state.processing = True
+        
+        # Create progress elements
+        progress_container = st.container()
+        with progress_container:
+            st.session_state.progress_text_element = st.empty()
+            st.session_state.progress_bar = st.progress(0)
+        
         update_progress(0, "Initializing processing...")
         
         # Handle different video formats and convert to MP4 if needed
