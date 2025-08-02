@@ -56,7 +56,7 @@ class VideoProcessor:
                 .filter('unsharp', luma_msize_x=3, luma_msize_y=3, luma_amount=0.6)  # Sharpening
                 .filter('noise', alls=18, allf='t+u')  # Film grain + temporal noise
                 .filter('colorbalance', rm=0.05, gm=-0.03, bm=0.02)  # Color balance
-                .filter('vibrance', intensity=0.2)  # Vibrance boost
+                .filter('eq', saturation=1.4)  # Enhanced saturation instead of vibrance
                 .filter('scale', 'iw*0.999', 'ih*0.999')  # Tiny scale change
                 .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2.5M'})
                 .overwrite_output()
@@ -79,7 +79,7 @@ class VideoProcessor:
                 .filter('unsharp', luma_msize_x=7, luma_msize_y=7, luma_amount=0.7)  # Strong sharpening
                 .filter('noise', alls=15, allf='t+u')  # Noise for algorithm confusion
                 .filter('colorbalance', rs=-0.02, gs=0.03, bs=-0.01)  # Color balance
-                .filter('curves', psfile=None, preset='darker')  # Curve adjustment
+                .filter('eq', gamma=0.95)  # Gamma adjustment instead of curves
                 .filter('scale', 'iw*1.001', 'ih*1.001')  # Minimal scale to change hash
                 .output(output_path, acodec='aac', vcodec='libx264', crf=21, **{'b:v': '3M'})
                 .overwrite_output()

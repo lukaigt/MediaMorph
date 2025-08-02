@@ -71,7 +71,7 @@ def main():
         # Show original file preview
         if file_details['category'] == 'image':
             st.subheader("📸 Original Image")
-            st.image(uploaded_file, caption="Original", use_column_width=True)
+            st.image(uploaded_file, caption="Original", use_container_width=True)
         else:
             st.subheader("🎥 Original Video")
             st.video(uploaded_file)
@@ -83,19 +83,22 @@ def main():
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("📱 TikTok Anti-Algorithm", use_container_width=True, type="primary", disabled=st.session_state.processing):
+            if st.button("📱 TikTok Anti-Algorithm", use_container_width=True, type="primary"):
                 st.session_state.current_platform = 'tiktok'
-                process_media_preset(uploaded_file, 'tiktok', file_details, processors)
+                with st.spinner("Processing for TikTok..."):
+                    process_media_preset(uploaded_file, 'tiktok', file_details, processors)
         
         with col2:
-            if st.button("📸 Instagram Anti-Algorithm", use_container_width=True, type="primary", disabled=st.session_state.processing):
+            if st.button("📸 Instagram Anti-Algorithm", use_container_width=True, type="primary"):
                 st.session_state.current_platform = 'instagram'
-                process_media_preset(uploaded_file, 'instagram', file_details, processors)
+                with st.spinner("Processing for Instagram..."):
+                    process_media_preset(uploaded_file, 'instagram', file_details, processors)
         
         with col3:
-            if st.button("🎥 YouTube Anti-Algorithm", use_container_width=True, type="primary", disabled=st.session_state.processing):
+            if st.button("🎥 YouTube Anti-Algorithm", use_container_width=True, type="primary"):
                 st.session_state.current_platform = 'youtube'
-                process_media_preset(uploaded_file, 'youtube', file_details, processors)
+                with st.spinner("Processing for YouTube..."):
+                    process_media_preset(uploaded_file, 'youtube', file_details, processors)
         
         # Show what each preset does
         with st.expander("🔧 What Each Preset Does", expanded=False):
@@ -157,10 +160,10 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("📸 Original Image")
-                st.image(uploaded_file, caption="Original", use_column_width=True)
+                st.image(uploaded_file, caption="Original", use_container_width=True)
             with col2:
                 st.subheader(f"✨ Processed ({st.session_state.current_platform.title() if st.session_state.current_platform else 'Custom'})")
-                st.image(st.session_state.processed_file, caption="Algorithm-Evaded", use_column_width=True)
+                st.image(st.session_state.processed_file, caption="Algorithm-Evaded", use_container_width=True)
         else:
             col1, col2 = st.columns(2)
             with col1:
@@ -211,37 +214,52 @@ def main():
 
 def process_media_preset(uploaded_file, platform, file_details, processors):
     """Unified function to process media with platform preset"""
-    st.session_state.processing = True
-    st.rerun()
-    
     try:
         # Create temp file with appropriate extension
         if file_details['category'] == 'video':
             suffix = '.mp4'
             processor = processors['video']
         else:
-            suffix = '.jpg'
+            suffix = '.jpg' 
             processor = processors['image']
         
+        # Reset file pointer and read data
+        uploaded_file.seek(0)
+        file_data = uploaded_file.read()
+        
+        # Create temporary input file
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_input:
-            temp_input.write(uploaded_file.read())
+            temp_input.write(file_data)
             temp_input_path = temp_input.name
         
+        # Process the file
         output_path = processor.apply_preset(temp_input_path, platform)
+        
+        # Update session state
         st.session_state.processed_file = output_path
-        st.success(f"✅ {file_details['type']} successfully processed for {platform.title()} with heavy algorithm evasion!")
+        st.success(f"✅ Successfully processed {file_details['type'].lower()} for {platform.title()} with advanced algorithm evasion!")
+        
+        # Show detailed changes made
+        st.info(f"""
+        **Applied {platform.title()} Anti-Algorithm Modifications:**
+        - Advanced noise patterns and LSB steganography
+        - Perceptual hash evasion through gradient perturbations  
+        - DCT domain modifications to bypass compression detection
+        - Color channel manipulation and micro-transformations
+        - File hash changes through scale and rotation adjustments
+        """)
         
     except Exception as e:
         st.error(f"❌ Error processing {file_details['type'].lower()}: {str(e)}")
-        st.error("Please try a different file or contact support if the issue persists.")
+        import traceback
+        st.error(f"Debug details: {traceback.format_exc()}")
     finally:
-        st.session_state.processing = False
+        # Cleanup temp file
         if 'temp_input_path' in locals():
             try:
                 os.unlink(temp_input_path)
             except:
                 pass
-        st.rerun()
 
 def process_custom_command(uploaded_file, command, file_details, processors):
     """Unified function to process media with custom command"""

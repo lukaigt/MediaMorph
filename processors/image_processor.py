@@ -49,6 +49,11 @@ class ImageProcessor:
                 # Add strong noise for algorithm confusion
                 img = self._add_noise(img, intensity=30)
                 
+                # Advanced hash evasion techniques
+                img = self._apply_steganographic_evasion(img, intensity=20)
+                img = self._apply_perceptual_hash_evasion(img)
+                img = self._apply_dct_domain_modifications(img)
+                
                 # Apply subtle rotation to change pixel positions
                 img = img.rotate(0.5, expand=False, fillcolor=(0, 0, 0))
                 
@@ -92,6 +97,11 @@ class ImageProcessor:
                 # Strong film grain and noise
                 img = self._add_noise(img, intensity=22)
                 
+                # Advanced algorithm evasion for Instagram
+                img = self._apply_steganographic_evasion(img, intensity=18)
+                img = self._apply_perceptual_hash_evasion(img)
+                img = self._apply_dct_domain_modifications(img)
+                
                 # Color channel manipulation for algorithm confusion
                 img = self._adjust_color_channels(img, r_adjust=1.03, g_adjust=0.97, b_adjust=1.02)
                 
@@ -134,6 +144,11 @@ class ImageProcessor:
                 
                 # Algorithm evasion noise
                 img = self._add_noise(img, intensity=18)
+                
+                # Advanced YouTube-specific evasion
+                img = self._apply_steganographic_evasion(img, intensity=16)
+                img = self._apply_perceptual_hash_evasion(img)
+                img = self._apply_dct_domain_modifications(img)
                 
                 # Color channel manipulation
                 img = self._adjust_color_channels(img, r_adjust=0.99, g_adjust=1.02, b_adjust=0.98)
@@ -281,5 +296,69 @@ class ImageProcessor:
         img_array[:, :, 0] = np.clip(img_array[:, :, 0] * r_adjust, 0, 255)  # Red
         img_array[:, :, 1] = np.clip(img_array[:, :, 1] * g_adjust, 0, 255)  # Green
         img_array[:, :, 2] = np.clip(img_array[:, :, 2] * b_adjust, 0, 255)  # Blue
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_steganographic_evasion(self, img, intensity=15):
+        """Apply LSB steganography-based evasion to modify hash"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Generate pseudo-random modifications based on pixel positions
+        np.random.seed(42)  # Consistent but unpredictable pattern
+        for i in range(0, height, 8):
+            for j in range(0, width, 8):
+                # Modify LSB of random pixels to change hash
+                if np.random.random() > 0.7:
+                    # Flip least significant bit
+                    for c in range(channels):
+                        if i < height and j < width:
+                            img_array[i, j, c] = img_array[i, j, c] ^ 1
+        
+        return Image.fromarray(img_array)
+    
+    def _apply_perceptual_hash_evasion(self, img):
+        """Apply gradient-based perturbations to evade perceptual hashing"""
+        img_array = np.array(img).astype(np.float32)
+        height, width, channels = img_array.shape
+        
+        # Add minimal gradient-based noise that changes hash but preserves perception
+        gradient_noise = np.random.uniform(-2, 2, (height, width, channels))
+        
+        # Apply noise more heavily to edges and high-frequency areas
+        from scipy import ndimage
+        edges = ndimage.sobel(np.mean(img_array, axis=2))
+        edges_3d = np.stack([edges] * channels, axis=2)
+        
+        # Amplify noise in edge regions
+        adaptive_noise = gradient_noise * (1 + edges_3d / 255.0 * 0.5)
+        
+        modified_array = img_array + adaptive_noise
+        modified_array = np.clip(modified_array, 0, 255).astype(np.uint8)
+        
+        return Image.fromarray(modified_array)
+    
+    def _apply_dct_domain_modifications(self, img):
+        """Apply discrete cosine transform domain modifications"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Process in 8x8 blocks like JPEG compression
+        for i in range(0, height - 8, 8):
+            for j in range(0, width - 8, 8):
+                for c in range(channels):
+                    block = img_array[i:i+8, j:j+8, c].astype(np.float32)
+                    
+                    # Apply DCT
+                    from scipy.fft import dctn, idctn
+                    dct_block = dctn(block, norm='ortho')
+                    
+                    # Modify high-frequency coefficients slightly
+                    if np.random.random() > 0.6:
+                        dct_block[6:8, 6:8] += np.random.uniform(-0.5, 0.5, (2, 2))
+                    
+                    # Apply inverse DCT
+                    modified_block = idctn(dct_block, norm='ortho')
+                    img_array[i:i+8, j:j+8, c] = np.clip(modified_block, 0, 255)
         
         return Image.fromarray(img_array.astype(np.uint8))

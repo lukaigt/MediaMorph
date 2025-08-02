@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Streamlit-based web application that helps users transform videos and images for safe social media reposting. The application applies platform-specific modifications (flipping, color adjustments, noise, speed changes) to help content bypass algorithm detection while maintaining quality. It supports multiple social media platforms including TikTok, Instagram, and YouTube, with different processing presets optimized for each platform's algorithm patterns.
+A Streamlit-based web application that helps users transform videos and images for safe social media reposting using advanced algorithm evasion techniques. The application applies sophisticated modifications including LSB steganography, perceptual hash evasion, DCT domain transformations, and multi-layer noise patterns to help content bypass modern AI-driven algorithm detection while maintaining visual quality. It supports multiple social media platforms including TikTok, Instagram, and YouTube, with heavy anti-algorithm presets optimized for each platform's detection systems.
 
 ## User Preferences
 
@@ -25,10 +25,10 @@ Preferred communication style: Simple, everyday language.
 - **File Management**: `FileUtils` class for file type detection and metadata extraction
 
 ### Processing Pipeline
-- **Video Processing**: FFmpeg-based transformations including horizontal flip, speed adjustment, zoom effects, and noise addition
-- **Image Processing**: PIL-based operations for color enhancement, brightness adjustment, noise addition, and format conversion
-- **Platform Presets**: Predefined transformation chains optimized for specific social media platforms
-- **Command System**: Flexible command parsing for custom transformation combinations
+- **Advanced Video Processing**: FFmpeg-based transformations with multi-layer modifications including horizontal flip, speed adjustment, zoom effects, strong noise patterns, color balance shifts, and hash-changing scale operations
+- **Sophisticated Image Processing**: PIL and scipy-based operations featuring LSB steganography, perceptual hash evasion, DCT domain modifications, gradient-based perturbations, color channel manipulation, and micro-transformations
+- **Heavy Anti-Algorithm Presets**: Research-based transformation chains designed to evade 2025 AI detection systems for each social media platform
+- **Advanced Command System**: Flexible parsing for custom transformation combinations with algorithm evasion techniques
 
 ### File Handling
 - **Temporary Storage**: Uses system temp directory for processing intermediate files
