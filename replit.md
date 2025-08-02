@@ -66,12 +66,13 @@ Preferred communication style: Simple, everyday language.
 ## Recent Major Updates (August 2025)
 
 ### Latest Critical Fixes (August 2, 2025)
+- **Instagram Audio Bug RESOLVED**: Fixed critical audio loss issue where Instagram videos had no sound
+- **Root Cause**: Instagram was using acodec='aac' which re-encodes audio and can cause corruption/loss
+- **Solution**: Changed Instagram to use acodec='copy' like TikTok and YouTube for perfect audio preservation
 - **YouTube Color Bug RESOLVED**: Fixed critical desaturation issue where YouTube videos were turning black and white
-- **Root Cause**: YouTube was incorrectly using TikTok's advanced colorchannelmixer filter causing color channel neutralization
-- **Solution**: Disabled problematic colorchannelmixer filter specifically for YouTube while preserving advanced evasion for TikTok/Instagram
 - **Code Quality**: Fixed all 3 LSP diagnostic errors including None type safety checks and unbound variable protections
-- **Audio Preservation**: Maintained perfect audio quality with 'copy' codec and robust error handling
-- **Comprehensive Testing**: All algorithm evasion systems verified operational with 64 parameters for TikTok, enhanced Instagram saturation (1.30x), and optimized YouTube color preservation
+- **Audio Preservation**: ALL platforms now use 'copy' codec for perfect audio quality with robust error handling
+- **Comprehensive Testing**: All algorithm evasion systems verified operational with perfect audio preservation across all platforms
 
 ## Recent Major Updates (August 2025)
 

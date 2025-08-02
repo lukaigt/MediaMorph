@@ -306,8 +306,8 @@ class VideoProcessor:
                     audio = input_stream.audio
                     (
                         ffmpeg
-                        .output(video, audio, output_path, acodec='aac', vcodec='libx264', crf=22, 
-                               ar=44100, ac=2, **{'b:v': '2.5M', 'b:a': self.audio_quality})
+                        .output(video, audio, output_path, acodec='copy', vcodec='libx264', crf=22, 
+                               **{'b:v': '2.5M'})
                         .overwrite_output()
                         .run(quiet=False)  # Show output for debugging
                     )
