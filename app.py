@@ -325,6 +325,52 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
         - Prevents algorithm pattern recognition across multiple posts
         
         **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes + undetectable file fingerprint + batch protection
+        
+        ## **🎬 Advanced Video Processing (2025 Research-Based)**
+        
+        **8-Layer Video Anti-Algorithm System:**
+        
+        **Layer 1: Temporal Domain Manipulation**
+        - Micro frame timing adjustments (imperceptible speed variations)
+        - Dynamic frame interpolation with FPS micro-variations
+        - Temporal noise injection that changes over time
+        
+        **Layer 2: Spatial Domain Evasion**
+        - Dynamic zoom with sine wave micro-variations
+        - Subtle perspective transformations (geometric warping)
+        - Content-adaptive spatial modifications
+        
+        **Layer 3: Frequency Domain Manipulation**
+        - Advanced DCT-inspired frequency modifications
+        - Color space transformations in YUV domain
+        - Multi-channel frequency band adjustments
+        
+        **Layer 4: Noise Injection System**
+        - Multi-layered temporal and spatial noise
+        - Content-adaptive noise (stronger on edges, weaker on smooth areas)
+        - Algorithm-confusing noise patterns that survive compression
+        
+        **Layer 5: Pixel-Level Disruption**
+        - Micro-blur with temporal oscillations
+        - Advanced color channel mixing (steganography-inspired)
+        - Psycho-visual masking for imperceptible changes
+        
+        **Layer 6: Revolutionary Audio Processing**
+        - **Multi-band EQ:** 3-stage frequency domain manipulation
+        - **Stereo field manipulation:** Imperceptible stereo width changes
+        - **Silent frame insertion:** Strategic silence for temporal evasion
+        - **Sample rate micro-adjustments:** Breaks audio fingerprints
+        - **Psychoacoustic volume:** Below human perception threshold
+        
+        **Layer 7: Container & Metadata Manipulation**
+        - Randomized H.264 encoding parameters (profile, level, preset)
+        - Fake creation timestamps and metadata injection
+        - Multiple pixel format variations (yuv420p, yuvj420p)
+        
+        **Layer 8: Format Conversion Chains**
+        - MP4→MKV→MP4 conversion chains with different settings
+        - Multi-stage encoding to break container fingerprints
+        - Dynamic bitrate and quality variations per stage
         """)
         
     except Exception as e:

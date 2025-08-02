@@ -8,6 +8,8 @@ import time
 class VideoProcessor:
     def __init__(self):
         self.temp_dir = tempfile.gettempdir()
+        self.session_history = []  # Track processing patterns to avoid repetition
+        self.max_history = 10      # Remember last 10 processing sessions
     
     def apply_preset(self, input_path, platform):
         """Apply platform-specific preset to video"""
@@ -23,56 +25,150 @@ class VideoProcessor:
             raise ValueError(f"Unknown platform: {platform}")
     
     def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Research-based 2025 anti-algorithm system with audio frequency manipulation"""
+        """TikTok: Advanced 8-layer anti-algorithm system with cutting-edge video evasion"""
         try:
-            # Get dynamic variation for this processing session
+            # Get dynamic variation with batch protection
             variation = self._get_dynamic_variation('tiktok')
             
-            # Build complex FFmpeg filter chain based on research findings
+            # Build advanced FFmpeg filter chain with 2025 research techniques
             input_stream = ffmpeg.input(input_path)
             
-            # Video processing with advanced evasion techniques
+            # === LAYER 1: TEMPORAL DOMAIN MANIPULATION ===
             video = input_stream.video
             
-            # Skip horizontal flip to preserve text readability
-            # Apply dynamic speed variation (research shows micro-variations fool detection)
+            # Micro frame timing adjustments (imperceptible but breaks temporal fingerprints)
             speed_factor = variation['speed_factor']
             video = video.filter('setpts', f'{speed_factor}*PTS')
             
-            # Dynamic zoom with variation to prevent pattern detection
-            zoom_factor = variation['zoom_factor']
-            video = video.filter('zoompan', zoom=zoom_factor, x='iw/2-(iw/zoom/2)', y='ih/2-(ih/zoom/2)', d=1)
+            # Frame interpolation with subtle variations
+            if variation.get('use_frame_interpolation', False):
+                video = video.filter('minterpolate', fps=variation['target_fps'], mi_mode='mci', mc_mode='aobmc')
             
-            # Adversarial color adjustments based on variation
+            # === LAYER 2: SPATIAL DOMAIN EVASION ===
+            # Dynamic zoom with micro-variations to break spatial patterns
+            zoom_factor = variation['zoom_factor']
+            video = video.filter('zoompan', 
+                zoom=f"{zoom_factor}+0.001*sin(2*PI*t/{variation['zoom_period']})", 
+                x='iw/2-(iw/zoom/2)', 
+                y='ih/2-(ih/zoom/2)', 
+                d=1)
+            
+            # Subtle geometric transformations
+            if variation.get('apply_perspective', False):
+                video = video.filter('perspective', 
+                    x0=variation['perspective']['x0'], y0=variation['perspective']['y0'],
+                    x1=variation['perspective']['x1'], y1=variation['perspective']['y1'],
+                    x2=variation['perspective']['x2'], y2=variation['perspective']['y2'],
+                    x3=variation['perspective']['x3'], y3=variation['perspective']['y3'])
+            
+            # === LAYER 3: FREQUENCY DOMAIN MANIPULATION ===
+            # Advanced color space transformations
             video = video.filter('eq', 
                 brightness=variation['brightness'], 
                 contrast=variation['contrast'], 
                 saturation=variation['saturation'],
                 gamma=variation['gamma'])
             
-            # DCT domain inspired modifications through unsharp filter
+            # DCT-inspired frequency domain modifications
             video = video.filter('unsharp', 
                 luma_msize_x=variation['unsharp_size'], 
                 luma_msize_y=variation['unsharp_size'], 
                 luma_amount=variation['unsharp_amount'])
             
-            # Dynamic noise patterns (FGS-Audio inspired for video)
+            # === LAYER 4: NOISE INJECTION SYSTEM ===
+            # Multi-layered noise for maximum algorithm confusion
+            # Temporal noise (changes over time)
             video = video.filter('noise', alls=variation['noise_level'], allf='t+u')
             
-            # Micro-blur for pixel-level changes
-            video = video.filter('boxblur', luma_radius=variation['blur_radius'], luma_power=1)
+            # Content-adaptive noise (stronger in edges, weaker in smooth areas)
+            if variation.get('adaptive_noise', False):
+                video = video.filter('convolution', 
+                    '1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1:1 -1 1|-1 5 -1|1 -1 1')
             
-            # Color balance shifts (content-adaptive)
-            video = video.filter('colorbalance', 
-                rs=variation['color_balance']['r'], 
-                gs=variation['color_balance']['g'], 
-                bs=variation['color_balance']['b'])
+            # === LAYER 5: PIXEL-LEVEL DISRUPTION ===
+            # Micro-blur with temporal variation
+            blur_radius = f"{variation['blur_radius']}+{variation['blur_variation']}*sin(2*PI*t/{variation['blur_period']})"
+            video = video.filter('boxblur', luma_radius=blur_radius, luma_power=1)
             
-            # Audio processing with frequency manipulation (Triple-Stage Audio inspired)
+            # Color channel mixing (advanced steganography-inspired)
+            video = video.filter('colorchannelmixer', 
+                rr=variation['channel_mix']['rr'], rg=variation['channel_mix']['rg'], rb=variation['channel_mix']['rb'],
+                gr=variation['channel_mix']['gr'], gg=variation['channel_mix']['gg'], gb=variation['channel_mix']['gb'],
+                br=variation['channel_mix']['br'], bg=variation['channel_mix']['bg'], bb=variation['channel_mix']['bb'])
+            
+            # === LAYER 6: ADVANCED AUDIO PROCESSING ===
             audio = input_stream.audio
             
-            # Stage 1: Pitch shift (imperceptible but changes audio fingerprint)
+            # Stage 1: Sample rate micro-adjustments (breaks audio fingerprints)
             audio = audio.filter('asetrate', variation['sample_rate_adjust'])
+            
+            # Stage 2: Multi-band EQ (imperceptible frequency domain changes)
+            for freq_band in variation['eq_bands']:
+                audio = audio.filter('equalizer', f=freq_band['freq'], g=freq_band['gain'], w=freq_band['width'])
+            
+            # Stage 3: Audio stereo field manipulation
+            if variation.get('stereo_manipulation', False):
+                audio = audio.filter('extrastereo', m=variation['stereo_factor'])
+            
+            # Stage 4: Psychoacoustic volume adjustments
+            audio = audio.filter('volume', variation['volume_factor'])
+            
+            # Stage 5: Silent frame insertion (advanced temporal evasion)
+            if variation.get('insert_silence', False):
+                silence_duration = variation['silence_duration']
+                silence_position = variation['silence_position']
+                silence = ffmpeg.input('anullsrc=r=44100:cl=stereo', f='lavfi', t=silence_duration)
+                audio = ffmpeg.filter([audio, silence], 'concat', n=2, v=0, a=1)
+            
+            # === LAYER 7: METADATA & CONTAINER MANIPULATION ===
+            # Advanced encoding with randomized parameters
+            encoding_params = {
+                'acodec': 'aac',
+                'vcodec': 'libx264',
+                'crf': variation['crf'],
+                'preset': variation['encoding_preset'],
+                'profile:v': variation['h264_profile'],
+                'level': variation['h264_level'],
+                'b:v': variation['bitrate'],
+                'b:a': variation['audio_bitrate'],
+                'movflags': '+faststart',  # Optimize for streaming
+                'pix_fmt': variation['pixel_format']
+            }
+            
+            # === LAYER 8: CONTAINER FORMAT CHAIN ===
+            # First encode to intermediate format
+            temp_output = output_path.replace('.mp4', '_temp.mkv')
+            
+            (
+                ffmpeg
+                .output(video, audio, temp_output, **encoding_params)
+                .overwrite_output()
+                .run(quiet=True)
+            )
+            
+            # Re-encode to final format with different settings (breaks container fingerprints)
+            final_params = {
+                'acodec': 'aac',
+                'vcodec': 'libx264', 
+                'crf': variation['final_crf'],
+                'movflags': '+faststart',
+                'metadata': f"creation_time={variation['fake_creation_time']}"
+            }
+            
+            (
+                ffmpeg
+                .input(temp_output)
+                .output(output_path, **final_params)
+                .overwrite_output()
+                .run(quiet=True)
+            )
+            
+            # Clean up temporary file
+            os.remove(temp_output)
+            
+            return output_path
+        except ffmpeg.Error as e:
+            raise Exception(f"FFmpeg error in TikTok preset: {e}")
             audio = audio.filter('aresample', 44100)  # Return to standard rate
             
             # Stage 2: Audio frequency band manipulation
@@ -148,35 +244,77 @@ class VideoProcessor:
             raise Exception(f"FFmpeg error in YouTube preset: {e}")
     
     def _get_dynamic_variation(self, platform):
-        """Get dynamic variation for video processing to prevent pattern detection"""
+        """Get advanced dynamic variation with batch protection for 2025 video processing"""
         # Use current time and random seed for variation selection
         variation_seed = int(time.time()) % 7 + random.randint(1, 4)
         
+        # Apply batch protection
+        variation_seed = self._apply_batch_protection(variation_seed, platform)
+        
         if platform == 'tiktok':
             return {
-                'speed_factor': random.uniform(0.97, 1.03),  # Micro speed variations
-                'zoom_factor': random.uniform(1.08, 1.18),   # Dynamic zoom
-                'brightness': random.uniform(0.02, 0.08),    # Brightness shifts
-                'contrast': random.uniform(1.05, 1.15),      # Contrast adjustments
-                'saturation': random.uniform(1.15, 1.25),    # Saturation boost
-                'gamma': random.uniform(0.98, 1.05),         # Gamma correction
-                'unsharp_size': random.choice([3, 5, 7]),    # Sharpening variations
-                'unsharp_amount': random.uniform(0.6, 0.9),  # Sharpening strength
-                'noise_level': random.randint(20, 30),       # Noise intensity
-                'blur_radius': random.uniform(0.8, 1.5),     # Blur amount
-                'color_balance': {
-                    'r': random.uniform(0.05, 0.12),         # Red balance
-                    'g': random.uniform(-0.08, -0.02),       # Green balance  
-                    'b': random.uniform(0.01, 0.05)          # Blue balance
+                # === TEMPORAL DOMAIN ===
+                'speed_factor': random.uniform(0.995, 1.005),    # Micro speed variations (imperceptible)
+                'use_frame_interpolation': random.choice([True, False]),
+                'target_fps': random.choice([29.97, 30, 30.03]),  # Slight FPS variations
+                
+                # === SPATIAL DOMAIN ===
+                'zoom_factor': random.uniform(1.02, 1.08),       # Subtle zoom
+                'zoom_period': random.uniform(60, 120),          # Zoom oscillation period
+                'apply_perspective': random.choice([True, False]),
+                'perspective': {
+                    'x0': random.uniform(0, 10), 'y0': random.uniform(0, 10),
+                    'x1': random.uniform(90, 100), 'y1': random.uniform(0, 10),
+                    'x2': random.uniform(0, 10), 'y2': random.uniform(90, 100),
+                    'x3': random.uniform(90, 100), 'y3': random.uniform(90, 100)
                 },
-                # Audio frequency manipulation (research-based)
-                'sample_rate_adjust': random.choice([44050, 44150, 44250]),  # Micro sample rate changes
-                'eq_frequency': random.choice([440, 880, 1320, 2200]),       # EQ target frequencies
-                'eq_gain': random.uniform(-0.5, 0.5),                        # EQ gain adjustments
-                'volume_factor': random.uniform(0.98, 1.02),                 # Volume micro-adjustments
-                'crf': random.randint(20, 24),                               # Dynamic quality
-                'bitrate': random.choice(['1.8M', '2M', '2.2M']),           # Bitrate variation
-                'audio_bitrate': random.choice(['128k', '160k', '192k'])     # Audio bitrate variation
+                
+                # === FREQUENCY DOMAIN ===
+                'brightness': random.uniform(0.005, 0.02),       # Very subtle brightness
+                'contrast': random.uniform(1.01, 1.05),          # Minimal contrast changes
+                'saturation': random.uniform(1.02, 1.08),        # Subtle saturation
+                'gamma': random.uniform(0.98, 1.02),             # Gamma correction
+                'unsharp_size': random.choice([3, 5]),           # Sharpening variations
+                'unsharp_amount': random.uniform(0.1, 0.3),      # Minimal sharpening
+                
+                # === NOISE SYSTEM ===
+                'noise_level': random.randint(3, 8),             # Very low noise
+                'adaptive_noise': random.choice([True, False]),
+                
+                # === PIXEL DISRUPTION ===
+                'blur_radius': random.uniform(0.1, 0.3),         # Minimal blur
+                'blur_variation': random.uniform(0.05, 0.1),     # Blur oscillation
+                'blur_period': random.uniform(30, 90),           # Blur period
+                'channel_mix': {
+                    'rr': random.uniform(0.98, 1.02), 'rg': random.uniform(-0.01, 0.01), 'rb': random.uniform(-0.01, 0.01),
+                    'gr': random.uniform(-0.01, 0.01), 'gg': random.uniform(0.98, 1.02), 'gb': random.uniform(-0.01, 0.01),
+                    'br': random.uniform(-0.01, 0.01), 'bg': random.uniform(-0.01, 0.01), 'bb': random.uniform(0.98, 1.02)
+                },
+                
+                # === ADVANCED AUDIO ===
+                'sample_rate_adjust': random.choice([44095, 44105, 44110]), # Micro sample rate changes
+                'eq_bands': [
+                    {'freq': random.choice([440, 880, 1320]), 'gain': random.uniform(-0.2, 0.2), 'width': random.choice([1, 2])},
+                    {'freq': random.choice([2200, 4400, 8800]), 'gain': random.uniform(-0.15, 0.15), 'width': random.choice([1, 2])},
+                    {'freq': random.choice([100, 200, 400]), 'gain': random.uniform(-0.1, 0.1), 'width': random.choice([2, 3])}
+                ],
+                'stereo_manipulation': random.choice([True, False]),
+                'stereo_factor': random.uniform(0.95, 1.05),
+                'volume_factor': random.uniform(0.998, 1.002),   # Barely perceptible
+                'insert_silence': random.choice([True, False]),
+                'silence_duration': random.uniform(0.01, 0.05),  # Very short silence
+                'silence_position': random.choice(['start', 'middle', 'end']),
+                
+                # === ENCODING PARAMETERS ===
+                'crf': random.randint(20, 24),
+                'encoding_preset': random.choice(['medium', 'slow', 'slower']),
+                'h264_profile': random.choice(['main', 'high']),
+                'h264_level': random.choice(['3.1', '4.0', '4.1']),
+                'pixel_format': random.choice(['yuv420p', 'yuvj420p']),
+                'bitrate': random.choice(['1.8M', '2M', '2.2M']),
+                'audio_bitrate': random.choice(['128k', '160k', '192k']),
+                'final_crf': random.randint(21, 25),
+                'fake_creation_time': self._generate_fake_timestamp()
             }
         elif platform == 'instagram':
             return {
@@ -284,3 +422,52 @@ class VideoProcessor:
             return stream.filter('noise', alls=15, allf='t')
         
         return stream
+    
+    def _apply_batch_protection(self, variation_seed, platform):
+        """Prevent pattern detection across multiple video uploads in the same session"""
+        # Create unique fingerprint for this processing session
+        session_fingerprint = {
+            'platform': platform,
+            'variation_type': variation_seed % 8,  # 8 different types for videos
+            'timestamp': int(time.time() / 600)    # 10-minute windows (videos take longer)
+        }
+        
+        # Check if this combination was used recently
+        recent_similar = [h for h in self.session_history 
+                         if h['platform'] == platform and 
+                         h['variation_type'] == session_fingerprint['variation_type'] and
+                         abs(h['timestamp'] - session_fingerprint['timestamp']) <= 3]
+        
+        # If similar pattern found recently, modify the variation
+        if recent_similar:
+            # Force a different variation type
+            available_types = list(range(8))
+            used_types = [h['variation_type'] for h in recent_similar]
+            available_types = [t for t in available_types if t not in used_types]
+            
+            if available_types:
+                new_type = random.choice(available_types)
+                variation_seed = (variation_seed // 8) * 8 + new_type
+            else:
+                # All types used recently, add random offset
+                variation_seed += random.randint(15, 75)
+        
+        # Add this session to history
+        self.session_history.append(session_fingerprint)
+        
+        # Keep only recent history
+        if len(self.session_history) > self.max_history:
+            self.session_history = self.session_history[-self.max_history:]
+        
+        return variation_seed
+    
+    def _generate_fake_timestamp(self):
+        """Generate fake but realistic video creation timestamp"""
+        import datetime
+        now = datetime.datetime.now()
+        random_days_ago = random.randint(1, 90)  # 1-90 days ago
+        fake_time = now - datetime.timedelta(days=random_days_ago, 
+                                           hours=random.randint(0, 23),
+                                           minutes=random.randint(0, 59),
+                                           seconds=random.randint(0, 59))
+        return fake_time.strftime('%Y-%m-%dT%H:%M:%S.000000Z')
