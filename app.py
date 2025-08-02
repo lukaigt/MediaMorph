@@ -121,26 +121,69 @@ def main():
         
         # Custom commands section
         st.header("💬 Custom Edit Commands")
-        with st.expander("ℹ️ Command Examples", expanded=False):
+        with st.expander("📋 All Available Commands (70+ Effects)", expanded=False):
             st.markdown("""
-            **Video Commands:**
-            - `flip horizontal` - Flip video horizontally
+            **📹 Video Commands:**
+            
+            **Basic Adjustments:**
+            - `flip horizontal/vertical` - Flip video
             - `speed 1.5` - Change playback speed
-            - `zoom 1.2` - Zoom in by factor
+            - `zoom 1.2` - Zoom in/out
             - `rotate 90` - Rotate by degrees
             - `slow 20%` - Slow down by percentage
+            - `brightness 120`, `contrast 110`, `saturation 1.3`
+            - `gamma 1.2`, `hue 30`, `temperature 200`
             
-            **Image Commands:**
-            - `flip vertical` - Flip image vertically
-            - `brightness 120` - Increase brightness
-            - `contrast 110` - Increase contrast
-            - `crop square` - Crop to square aspect ratio
-            - `vintage filter` - Apply vintage effect
+            **Visual Effects:**
+            - `blur 5`, `sharpen 1.5`, `grain 25`, `noise 15`
+            - `glitch 10`, `chromatic 3`, `vhs`, `film`
+            - `sepia`, `invert`, `vintage`, `fade 0.3`
+            - `mirror horizontal`, `kaleidoscope 6`, `wave 10`
+            - `pixelate 8`, `oil 4`, `emboss`, `edge`
+            - `solarize 128`, `posterize 4`, `vignette 0.8`
+            
+            **Advanced Effects:**
+            - `letterbox`, `crop_zoom 1.2`, `stabilize`
+            - `framerate 30`, `reverse`, `loop 2`
+            - `echo 0.5`, `freeze 1.0`, `skip 1.0`
+            - `audio_pitch 1.2`, `audio_echo 0.3`, `audio_bass 5`
+            
+            **🖼️ Image Commands:**
+            
+            **Basic Adjustments:**
+            - `flip vertical/horizontal` - Flip image
+            - `brightness 120`, `contrast 110`, `color 120`
+            - `crop square`, `rotate 45`, `tilt 2.0`
+            - `gamma 1.2`, `hue 30`, `saturation 1.3`
+            - `temperature 200`, `fade 0.3`, `compression 70`
+            
+            **Creative Effects:**
+            - `blur 5`, `sharpen 1.5`, `grain 25`, `noise 15`
+            - `glitch 10`, `chromatic 3`, `vhs`, `film`
+            - `sepia`, `invert`, `vintage`, `mirror`
+            - `kaleidoscope 6`, `wave 10`, `pixelate 8`
+            - `oil 4`, `emboss`, `edge`, `solarize 128`
+            - `posterize 4`, `vignette 0.8`, `dither`
+            
+            **Artistic Styles:**
+            - `sketch`, `cartoon`, `watercolor`, `pencil`
+            - `mosaic 20`, `cross_hatch`, `stipple`, `ascii`
+            - `thermal`, `x_ray`, `night_vision`, `halftone 15`
+            
+            **Shape Effects:**
+            - `square`, `portrait`, `landscape`, `letterbox`
+            - `fisheye 0.8`, `barrel 0.3`, `perspective`
+            - `crop_zoom 1.2`
+            
+            **💡 Usage Examples:**
+            - Single effect: `blur 10`
+            - Multiple effects: `sepia + grain 20 + vignette 0.5`
+            - Complex combo: `glitch 15 + chromatic 5 + film + noise 25`
             """)
         
         custom_command = st.text_input(
             "Enter custom edit command:",
-            placeholder="e.g., 'flip horizontal + speed 1.2 + vintage filter + noise 30'",
+            placeholder="e.g., 'glitch 15 + chromatic 5 + film + vignette 0.8 + noise 25'",
             disabled=st.session_state.processing
         )
         

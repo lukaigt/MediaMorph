@@ -30,8 +30,8 @@ class ImageProcessor:
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # Horizontal flip
-                img = img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+                # Skip horizontal flip to preserve text readability
+                # Instead use advanced noise patterns for algorithm evasion
                 
                 # Multiple color adjustments for heavy algorithm evasion
                 enhancer = ImageEnhance.Color(img)
