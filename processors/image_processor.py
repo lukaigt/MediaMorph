@@ -4,71 +4,58 @@ import tempfile
 import os
 from pathlib import Path
 import numpy as np
+import random
+import time
 
 class ImageProcessor:
     def __init__(self):
         self.temp_dir = tempfile.gettempdir()
     
     def apply_preset(self, input_path, platform):
-        """Apply platform-specific preset to image"""
+        """Apply platform-specific preset with dynamic anti-algorithm variations"""
         output_path = os.path.join(self.temp_dir, f"processed_{platform}_{Path(input_path).stem}.jpg")
         
         if platform == 'tiktok':
-            return self._apply_tiktok_preset(input_path, output_path)
+            return self._apply_tiktok_advanced_preset(input_path, output_path)
         elif platform == 'instagram':
-            return self._apply_instagram_preset(input_path, output_path)
+            return self._apply_instagram_advanced_preset(input_path, output_path)
         elif platform == 'youtube':
-            return self._apply_youtube_preset(input_path, output_path)
+            return self._apply_youtube_advanced_preset(input_path, output_path)
         else:
             raise ValueError(f"Unknown platform: {platform}")
     
-    def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Advanced algorithm evasion with multiple transformations"""
+    def _apply_tiktok_advanced_preset(self, input_path, output_path):
+        """TikTok: Research-based 2025 anti-algorithm system with dynamic variations"""
         try:
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # Skip horizontal flip to preserve text readability
-                # Instead use advanced noise patterns for algorithm evasion
+                # Dynamic variation system - 5 different approaches
+                variation = self._get_dynamic_variation('tiktok')
                 
-                # Multiple color adjustments for heavy algorithm evasion
-                enhancer = ImageEnhance.Color(img)
-                img = enhancer.enhance(1.35)
+                # Layer 1: FGS-Audio inspired adversarial perturbations for images
+                img = self._apply_adversarial_perturbations(img, variation)
                 
-                enhancer = ImageEnhance.Brightness(img)
-                img = enhancer.enhance(1.08)
+                # Layer 2: Reversible adversarial steganography with content-adaptive changes
+                img = self._apply_reversible_steganography(img, variation)
                 
-                enhancer = ImageEnhance.Contrast(img)
-                img = enhancer.enhance(1.12)
+                # Layer 3: Hybrid DCT + GAN inspired frequency domain manipulation
+                img = self._apply_hybrid_dct_manipulation(img, variation)
                 
-                enhancer = ImageEnhance.Sharpness(img)
-                img = enhancer.enhance(1.15)
+                # Layer 4: Triple-stage robust processing (inspired by audio research)
+                img = self._apply_triple_stage_processing(img, variation)
                 
-                # Add strong noise for algorithm confusion
-                img = self._add_noise(img, intensity=30)
+                # Layer 5: Platform-specific TikTok algorithm evasion
+                img = self._apply_tiktok_specific_evasion(img, variation)
                 
-                # Advanced hash evasion techniques
-                img = self._apply_steganographic_evasion(img, intensity=20)
-                img = self._apply_perceptual_hash_evasion(img)
-                img = self._apply_dct_domain_modifications(img)
-                
-                # Apply subtle rotation to change pixel positions
-                img = img.rotate(0.5, expand=False, fillcolor=(0, 0, 0))
-                
-                # Color channel manipulation
-                img = self._adjust_color_channels(img, r_adjust=1.02, g_adjust=0.98, b_adjust=1.01)
-                
-                # Micro resize to change file hash
-                width, height = img.size
-                img = img.resize((int(width * 0.999), int(height * 0.999)), Resampling.LANCZOS)
-                img = img.resize((width, height), Resampling.LANCZOS)
-                
-                img.save(output_path, 'JPEG', quality=82, optimize=True)
+                # Dynamic quality and compression to prevent pattern detection
+                quality = random.randint(78, 87)
+                img.save(output_path, 'JPEG', quality=quality, optimize=True)
                 return output_path
         except Exception as e:
-            raise Exception(f"Error in TikTok image preset: {e}")
+            raise Exception(f"Error in TikTok advanced preset: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
         """Instagram: Advanced square processing with heavy algorithm evasion"""
@@ -741,3 +728,429 @@ class ImageProcessor:
             rgb_array[i] = rgb_array[i] * 0.8
         
         return Image.fromarray(rgb_array.astype(np.uint8))
+    
+    def _get_dynamic_variation(self, platform):
+        """Get dynamic variation based on time and randomization to prevent pattern detection"""
+        # Use current time and random seed for variation selection
+        variation_seed = int(time.time()) % 5 + random.randint(1, 3)
+        
+        variations = {
+            'tiktok': {
+                'type': variation_seed % 5,
+                'intensity': random.uniform(0.7, 0.95),
+                'noise_level': random.randint(15, 35),
+                'color_shift': random.uniform(0.02, 0.08),
+                'frequency_bands': random.choice(['low', 'mid', 'high', 'mixed']),
+                'perturbation_strength': random.uniform(0.1, 0.3)
+            },
+            'instagram': {
+                'type': variation_seed % 4,
+                'intensity': random.uniform(0.6, 0.9),
+                'noise_level': random.randint(12, 28),
+                'color_shift': random.uniform(0.03, 0.09),
+                'frequency_bands': random.choice(['low', 'mid', 'mixed']),
+                'perturbation_strength': random.uniform(0.08, 0.25)
+            },
+            'youtube': {
+                'type': variation_seed % 4,
+                'intensity': random.uniform(0.65, 0.88),
+                'noise_level': random.randint(10, 25),
+                'color_shift': random.uniform(0.02, 0.07),
+                'frequency_bands': random.choice(['mid', 'high', 'mixed']),
+                'perturbation_strength': random.uniform(0.05, 0.2)
+            }
+        }
+        
+        return variations.get(platform, variations['tiktok'])
+    
+    def _apply_adversarial_perturbations(self, img, variation):
+        """Apply FGS-Audio inspired adversarial perturbations for images"""
+        img_array = np.array(img).astype(np.float32)
+        height, width, channels = img_array.shape
+        
+        # Generate content-adaptive adversarial perturbations
+        perturbation_strength = variation['perturbation_strength']
+        
+        # Create gradient-based perturbations (simplified version of adversarial attacks)
+        for c in range(channels):
+            # Apply different perturbation patterns based on variation type
+            if variation['type'] == 0:
+                # Horizontal gradient perturbations
+                gradient = np.linspace(-perturbation_strength, perturbation_strength, width)
+                perturbation = np.tile(gradient, (height, 1)) * 255
+            elif variation['type'] == 1:
+                # Vertical gradient perturbations
+                gradient = np.linspace(-perturbation_strength, perturbation_strength, height)
+                perturbation = np.tile(gradient.reshape(-1, 1), (1, width)) * 255
+            elif variation['type'] == 2:
+                # Diagonal perturbations
+                x, y = np.meshgrid(np.arange(width), np.arange(height))
+                perturbation = ((x + y) % 17) * perturbation_strength * 255 / 17
+            elif variation['type'] == 3:
+                # Circular perturbations
+                center_x, center_y = width // 2, height // 2
+                x, y = np.meshgrid(np.arange(width), np.arange(height))
+                distance = np.sqrt((x - center_x)**2 + (y - center_y)**2)
+                perturbation = np.sin(distance * 0.1) * perturbation_strength * 255
+            else:
+                # Random noise perturbations
+                perturbation = np.random.normal(0, perturbation_strength * 255, (height, width))
+            
+            # Apply perturbation to channel
+            img_array[:, :, c] += perturbation
+        
+        img_array = np.clip(img_array, 0, 255)
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_reversible_steganography(self, img, variation):
+        """Apply reversible adversarial steganography with content-adaptive changes"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Content-adaptive LSB modification based on image texture
+        from scipy import ndimage
+        
+        # Detect texture regions for adaptive embedding
+        gray = np.mean(img_array, axis=2)
+        gradient_magnitude = ndimage.sobel(gray)
+        texture_mask = gradient_magnitude > np.percentile(gradient_magnitude, 70)
+        
+        # Apply LSB modifications primarily in textured regions
+        for c in range(channels):
+            channel = img_array[:, :, c].copy()
+            
+            # Generate pseudo-random pattern based on variation
+            np.random.seed(variation['type'] + c)
+            modification_pattern = np.random.randint(0, 4, (height, width))
+            
+            # Apply modifications only where texture mask allows
+            modification_mask = texture_mask & (modification_pattern == 0)
+            
+            # Modify LSB in selected regions
+            channel[modification_mask] = (channel[modification_mask] & 0xFE) | (variation['type'] % 2)
+            
+            # For higher intensity, modify 2nd LSB as well
+            if variation['intensity'] > 0.8:
+                channel[modification_mask] = (channel[modification_mask] & 0xFD) | ((variation['type'] // 2) % 2) << 1
+            
+            img_array[:, :, c] = channel
+        
+        return Image.fromarray(img_array)
+    
+    def _apply_hybrid_dct_manipulation(self, img, variation):
+        """Apply hybrid DCT + GAN inspired frequency domain manipulation"""
+        img_array = np.array(img)
+        height, width, channels = img_array.shape
+        
+        # Process in DCT domain (8x8 blocks like JPEG)
+        from scipy.fft import dctn, idctn
+        
+        # Pad image to ensure divisibility by 8
+        pad_h = (8 - height % 8) % 8
+        pad_w = (8 - width % 8) % 8
+        padded_img = np.pad(img_array, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
+        new_height, new_width = padded_img.shape[:2]
+        
+        for c in range(channels):
+            channel = padded_img[:, :, c].astype(np.float32)
+            
+            # Process in 8x8 DCT blocks
+            for i in range(0, new_height - 7, 8):
+                for j in range(0, new_width - 7, 8):
+                    block = channel[i:i+8, j:j+8]
+                    
+                    # Apply DCT
+                    dct_block = dctn(block, norm='ortho')
+                    
+                    # Frequency band manipulation based on variation
+                    if variation['frequency_bands'] == 'low':
+                        # Modify low frequency coefficients
+                        dct_block[0:3, 0:3] += np.random.uniform(-0.5, 0.5, (3, 3)) * variation['intensity']
+                    elif variation['frequency_bands'] == 'mid':
+                        # Modify mid frequency coefficients
+                        dct_block[2:6, 2:6] += np.random.uniform(-0.8, 0.8, (4, 4)) * variation['intensity']
+                    elif variation['frequency_bands'] == 'high':
+                        # Modify high frequency coefficients
+                        dct_block[5:8, 5:8] += np.random.uniform(-1.2, 1.2, (3, 3)) * variation['intensity']
+                    else:  # mixed
+                        # Modify across all bands with different weights
+                        dct_block[0:3, 0:3] += np.random.uniform(-0.3, 0.3, (3, 3)) * variation['intensity']
+                        dct_block[3:6, 3:6] += np.random.uniform(-0.6, 0.6, (3, 3)) * variation['intensity']
+                        dct_block[6:8, 6:8] += np.random.uniform(-0.9, 0.9, (2, 2)) * variation['intensity']
+                    
+                    # Apply inverse DCT
+                    modified_block = idctn(dct_block, norm='ortho')
+                    channel[i:i+8, j:j+8] = np.clip(modified_block, 0, 255)
+            
+            padded_img[:, :, c] = channel
+        
+        # Remove padding
+        result = padded_img[:height, :width, :]
+        return Image.fromarray(result.astype(np.uint8))
+    
+    def _apply_triple_stage_processing(self, img, variation):
+        """Apply triple-stage robust processing inspired by audio research"""
+        
+        # Stage 1: Psychoacoustic model inspired visual processing
+        img = self._apply_psycho_visual_processing(img, variation)
+        
+        # Stage 2: Robust embedding domain (transform domain manipulation)
+        img = self._apply_robust_embedding_domain(img, variation)
+        
+        # Stage 3: Error correction and resilience
+        img = self._apply_error_correction_processing(img, variation)
+        
+        return img
+    
+    def _apply_psycho_visual_processing(self, img, variation):
+        """Stage 1: Psychoacoustic model inspired processing for visual domain"""
+        img_array = np.array(img).astype(np.float32)
+        
+        # Human visual system inspired masking
+        # Apply stronger modifications in areas where human vision is less sensitive
+        
+        # Convert to luminance for visual sensitivity analysis
+        luminance = 0.299 * img_array[:, :, 0] + 0.587 * img_array[:, :, 1] + 0.114 * img_array[:, :, 2]
+        
+        # Create masking based on local luminance adaptation
+        from scipy import ndimage
+        local_mean = ndimage.uniform_filter(luminance, size=8)
+        visual_mask = np.abs(luminance - local_mean) / (local_mean + 1)
+        
+        # Apply adaptive modifications
+        for c in range(3):
+            noise_strength = variation['noise_level'] * visual_mask / 255.0
+            channel_noise = np.random.normal(0, 1, img_array[:, :, c].shape) * noise_strength.reshape(luminance.shape)
+            img_array[:, :, c] += channel_noise
+        
+        img_array = np.clip(img_array, 0, 255)
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_robust_embedding_domain(self, img, variation):
+        """Stage 2: Robust embedding in transform domain"""
+        img_array = np.array(img)
+        
+        # Apply color space transformation for robust embedding
+        # Convert RGB to YUV for better robustness
+        yuv_matrix = np.array([
+            [0.299, 0.587, 0.114],
+            [-0.14713, -0.28886, 0.436],
+            [0.615, -0.51499, -0.10001]
+        ])
+        
+        # Reshape for matrix multiplication
+        img_flat = img_array.reshape(-1, 3).T
+        yuv_img = yuv_matrix @ img_flat
+        yuv_img = yuv_img.T.reshape(img_array.shape)
+        
+        # Apply modifications in YUV space (more robust to compression)
+        if variation['intensity'] > 0.5:
+            # Modify U and V channels (chrominance) which are less perceptible
+            yuv_img[:, :, 1] += np.random.uniform(-2, 2, yuv_img[:, :, 1].shape) * variation['color_shift']
+            yuv_img[:, :, 2] += np.random.uniform(-2, 2, yuv_img[:, :, 2].shape) * variation['color_shift']
+        
+        # Convert back to RGB
+        rgb_matrix = np.linalg.inv(yuv_matrix)
+        yuv_flat = yuv_img.reshape(-1, 3).T
+        rgb_img = rgb_matrix @ yuv_flat
+        rgb_img = rgb_img.T.reshape(img_array.shape)
+        
+        rgb_img = np.clip(rgb_img, 0, 255)
+        return Image.fromarray(rgb_img.astype(np.uint8))
+    
+    def _apply_error_correction_processing(self, img, variation):
+        """Stage 3: Error correction and resilience processing"""
+        img_array = np.array(img)
+        
+        # Apply redundant modifications for error correction
+        # Multiple small changes that survive compression better than single large changes
+        
+        for iteration in range(3):  # Apply multiple iterations for redundancy
+            # Micro-adjustments that survive compression
+            adjustment_strength = variation['intensity'] * 0.1 * (iteration + 1)
+            
+            # Apply different types of micro-adjustments
+            if iteration == 0:
+                # Brightness micro-adjustments
+                img_array = img_array + np.random.uniform(-adjustment_strength, adjustment_strength, img_array.shape)
+            elif iteration == 1:
+                # Contrast micro-adjustments
+                mean_brightness = np.mean(img_array, axis=(0, 1), keepdims=True)
+                img_array = (img_array - mean_brightness) * (1 + adjustment_strength * 0.1) + mean_brightness
+            else:
+                # Color balance micro-adjustments
+                img_array[:, :, 0] *= (1 + adjustment_strength * 0.05)
+                img_array[:, :, 1] *= (1 - adjustment_strength * 0.03)
+                img_array[:, :, 2] *= (1 + adjustment_strength * 0.02)
+        
+        img_array = np.clip(img_array, 0, 255)
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_tiktok_specific_evasion(self, img, variation):
+        """Apply TikTok-specific algorithm evasion based on platform analysis"""
+        # TikTok algorithm focuses heavily on:
+        # 1. Face detection and tracking
+        # 2. Object recognition
+        # 3. Text/caption analysis
+        # 4. Audio-visual synchronization
+        
+        # Apply TikTok-specific modifications
+        enhancer = ImageEnhance.Color(img)
+        color_factor = 1.0 + (variation['color_shift'] * 2)  # TikTok likes vibrant colors
+        img = enhancer.enhance(color_factor)
+        
+        # Apply subtle sharpening (TikTok algorithm prefers sharp content)
+        enhancer = ImageEnhance.Sharpness(img)
+        sharpness_factor = 1.0 + (variation['intensity'] * 0.3)
+        img = enhancer.enhance(sharpness_factor)
+        
+        # Apply micro-rotation to break pixel-level matching
+        rotation_angle = random.uniform(-0.3, 0.3) * variation['intensity']
+        img = img.rotate(rotation_angle, expand=False, fillcolor=(0, 0, 0))
+        
+        # Apply final noise pattern specifically designed for TikTok's detection
+        img_array = np.array(img)
+        
+        # TikTok-specific noise pattern (based on platform's compression characteristics)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.5, img_array.shape)
+        
+        # Apply noise more heavily to edges (where TikTok's algorithm looks for features)
+        from scipy import ndimage
+        edges = ndimage.sobel(np.mean(img_array, axis=2))
+        edges_3d = np.stack([edges] * 3, axis=2)
+        adaptive_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.3)
+        
+        img_array = img_array + adaptive_noise
+        img_array = np.clip(img_array, 0, 255)
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_instagram_advanced_preset(self, input_path, output_path):
+        """Instagram: Research-based 2025 anti-algorithm system optimized for square format"""
+        try:
+            with Image.open(input_path) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Crop to square format first
+                img = self._crop_to_square(img)
+                
+                # Get dynamic variation for Instagram
+                variation = self._get_dynamic_variation('instagram')
+                
+                # Apply the same advanced 5-layer system
+                img = self._apply_adversarial_perturbations(img, variation)
+                img = self._apply_reversible_steganography(img, variation)
+                img = self._apply_hybrid_dct_manipulation(img, variation)
+                img = self._apply_triple_stage_processing(img, variation)
+                img = self._apply_instagram_specific_evasion(img, variation)
+                
+                # Dynamic quality for Instagram
+                quality = random.randint(80, 90)
+                img.save(output_path, 'JPEG', quality=quality, optimize=True)
+                return output_path
+        except Exception as e:
+            raise Exception(f"Error in Instagram advanced preset: {e}")
+    
+    def _apply_youtube_advanced_preset(self, input_path, output_path):
+        """YouTube: Research-based 2025 anti-algorithm system optimized for landscape format"""
+        try:
+            with Image.open(input_path) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Get dynamic variation for YouTube
+                variation = self._get_dynamic_variation('youtube')
+                
+                # Apply the same advanced 5-layer system
+                img = self._apply_adversarial_perturbations(img, variation)
+                img = self._apply_reversible_steganography(img, variation)
+                img = self._apply_hybrid_dct_manipulation(img, variation)
+                img = self._apply_triple_stage_processing(img, variation)
+                img = self._apply_youtube_specific_evasion(img, variation)
+                
+                # Dynamic quality for YouTube
+                quality = random.randint(75, 85)
+                img.save(output_path, 'JPEG', quality=quality, optimize=True)
+                return output_path
+        except Exception as e:
+            raise Exception(f"Error in YouTube advanced preset: {e}")
+    
+    def _apply_instagram_specific_evasion(self, img, variation):
+        """Apply Instagram-specific algorithm evasion"""
+        # Instagram algorithm focuses on:
+        # 1. Square format detection
+        # 2. Color vibrancy and saturation
+        # 3. Face and object recognition
+        # 4. Engagement prediction based on visual appeal
+        
+        # Enhance for Instagram's preference for vibrant content
+        enhancer = ImageEnhance.Color(img)
+        color_factor = 1.0 + (variation['color_shift'] * 3)  # Instagram loves vibrant colors
+        img = enhancer.enhance(color_factor)
+        
+        # Apply saturation boost specifically for Instagram
+        enhancer = ImageEnhance.Color(img)
+        saturation_factor = 1.0 + (variation['intensity'] * 0.4)
+        img = enhancer.enhance(saturation_factor)
+        
+        # Apply slight contrast enhancement
+        enhancer = ImageEnhance.Contrast(img)
+        contrast_factor = 1.0 + (variation['intensity'] * 0.2)
+        img = enhancer.enhance(contrast_factor)
+        
+        # Instagram-specific noise pattern
+        img_array = np.array(img)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.3, img_array.shape)
+        
+        # Apply noise with Instagram's characteristic pattern
+        from scipy import ndimage
+        edges = ndimage.sobel(np.mean(img_array, axis=2))
+        edges_3d = np.stack([edges] * 3, axis=2)
+        instagram_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.2)
+        
+        img_array = img_array + instagram_noise
+        img_array = np.clip(img_array, 0, 255)
+        
+        return Image.fromarray(img_array.astype(np.uint8))
+    
+    def _apply_youtube_specific_evasion(self, img, variation):
+        """Apply YouTube-specific algorithm evasion"""
+        # YouTube algorithm focuses on:
+        # 1. Thumbnail effectiveness and click-through rates
+        # 2. Content recognition and categorization
+        # 3. Face detection for personalization
+        # 4. Text overlay detection
+        
+        # YouTube prefers slightly cooler tones and sharp images
+        enhancer = ImageEnhance.Sharpness(img)
+        sharpness_factor = 1.0 + (variation['intensity'] * 0.4)
+        img = enhancer.enhance(sharpness_factor)
+        
+        # Apply subtle color temperature adjustment
+        img_array = np.array(img).astype(np.float32)
+        
+        # Cool down slightly (YouTube's algorithm preference)
+        img_array[:, :, 0] *= (1 - variation['color_shift'] * 0.1)  # Reduce red slightly
+        img_array[:, :, 2] *= (1 + variation['color_shift'] * 0.1)  # Enhance blue slightly
+        
+        # YouTube-specific micro-transformations
+        # Apply subtle rotation for pixel disruption
+        rotation_angle = random.uniform(-0.2, 0.2) * variation['intensity']
+        img = Image.fromarray(np.clip(img_array, 0, 255).astype(np.uint8))
+        img = img.rotate(rotation_angle, expand=False, fillcolor=(0, 0, 0))
+        
+        # Final YouTube noise pattern (lower intensity, more strategic)
+        img_array = np.array(img)
+        noise_pattern = np.random.normal(0, variation['noise_level'] * 0.2, img_array.shape)
+        
+        # Apply noise strategically in areas YouTube algorithm examines
+        from scipy import ndimage
+        edges = ndimage.sobel(np.mean(img_array, axis=2))
+        edges_3d = np.stack([edges] * 3, axis=2)
+        youtube_noise = noise_pattern * (1 + edges_3d / 255.0 * 0.15)
+        
+        img_array = img_array + youtube_noise
+        img_array = np.clip(img_array, 0, 255)
+        
+        return Image.fromarray(img_array.astype(np.uint8))

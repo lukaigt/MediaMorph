@@ -2,6 +2,8 @@ import ffmpeg
 import tempfile
 import os
 from pathlib import Path
+import random
+import time
 
 class VideoProcessor:
     def __init__(self):
@@ -21,27 +23,83 @@ class VideoProcessor:
             raise ValueError(f"Unknown platform: {platform}")
     
     def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Advanced algorithm evasion with multiple transformations"""
+        """TikTok: Research-based 2025 anti-algorithm system with audio frequency manipulation"""
         try:
+            # Get dynamic variation for this processing session
+            variation = self._get_dynamic_variation('tiktok')
+            
+            # Build complex FFmpeg filter chain based on research findings
+            input_stream = ffmpeg.input(input_path)
+            
+            # Video processing with advanced evasion techniques
+            video = input_stream.video
+            
+            # Skip horizontal flip to preserve text readability
+            # Apply dynamic speed variation (research shows micro-variations fool detection)
+            speed_factor = variation['speed_factor']
+            video = video.filter('setpts', f'{speed_factor}*PTS')
+            
+            # Dynamic zoom with variation to prevent pattern detection
+            zoom_factor = variation['zoom_factor']
+            video = video.filter('zoompan', zoom=zoom_factor, x='iw/2-(iw/zoom/2)', y='ih/2-(ih/zoom/2)', d=1)
+            
+            # Adversarial color adjustments based on variation
+            video = video.filter('eq', 
+                brightness=variation['brightness'], 
+                contrast=variation['contrast'], 
+                saturation=variation['saturation'],
+                gamma=variation['gamma'])
+            
+            # DCT domain inspired modifications through unsharp filter
+            video = video.filter('unsharp', 
+                luma_msize_x=variation['unsharp_size'], 
+                luma_msize_y=variation['unsharp_size'], 
+                luma_amount=variation['unsharp_amount'])
+            
+            # Dynamic noise patterns (FGS-Audio inspired for video)
+            video = video.filter('noise', alls=variation['noise_level'], allf='t+u')
+            
+            # Micro-blur for pixel-level changes
+            video = video.filter('boxblur', luma_radius=variation['blur_radius'], luma_power=1)
+            
+            # Color balance shifts (content-adaptive)
+            video = video.filter('colorbalance', 
+                rs=variation['color_balance']['r'], 
+                gs=variation['color_balance']['g'], 
+                bs=variation['color_balance']['b'])
+            
+            # Audio processing with frequency manipulation (Triple-Stage Audio inspired)
+            audio = input_stream.audio
+            
+            # Stage 1: Pitch shift (imperceptible but changes audio fingerprint)
+            audio = audio.filter('asetrate', variation['sample_rate_adjust'])
+            audio = audio.filter('aresample', 44100)  # Return to standard rate
+            
+            # Stage 2: Audio frequency band manipulation
+            audio = audio.filter('equalizer', f=variation['eq_frequency'], width_type='h', width=2, g=variation['eq_gain'])
+            
+            # Stage 3: Micro-volume adjustments for audio fingerprint evasion
+            audio = audio.filter('volume', variation['volume_factor'])
+            
+            # Dynamic output settings to prevent encoding pattern detection
+            output_settings = {
+                'acodec': 'aac',
+                'vcodec': 'libx264', 
+                'crf': variation['crf'],
+                'b:v': variation['bitrate'],
+                'b:a': variation['audio_bitrate']
+            }
+            
+            # Combine video and audio with dynamic settings
             (
                 ffmpeg
-                .input(input_path)
-                .video
-                .filter('hflip')  # Horizontal flip
-                .filter('setpts', '0.85*PTS')  # Speed up by 15%
-                .filter('zoompan', zoom='1.15', x='iw/2-(iw/zoom/2)', y='ih/2-(ih/zoom/2)', d=1)  # Stronger zoom
-                .filter('eq', brightness=0.05, contrast=1.1, saturation=1.2)  # Color adjustments
-                .filter('unsharp', luma_msize_x=5, luma_msize_y=5, luma_amount=0.8)  # Sharpening
-                .filter('noise', alls=25, allf='t+u')  # Strong noise
-                .filter('boxblur', luma_radius=1, luma_power=1)  # Subtle blur to change pixels
-                .filter('colorbalance', rs=0.1, gs=-0.05, bs=0.02)  # Color balance shift
-                .output(output_path, acodec='aac', vcodec='libx264', crf=22, **{'b:v': '2M'})
+                .output(video, audio, output_path, **output_settings)
                 .overwrite_output()
                 .run(quiet=True)
             )
             return output_path
         except ffmpeg.Error as e:
-            raise Exception(f"FFmpeg error in TikTok preset: {e}")
+            raise Exception(f"FFmpeg error in TikTok advanced preset: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
         """Instagram: Advanced square processing with heavy modifications"""
@@ -88,6 +146,85 @@ class VideoProcessor:
             return output_path
         except ffmpeg.Error as e:
             raise Exception(f"FFmpeg error in YouTube preset: {e}")
+    
+    def _get_dynamic_variation(self, platform):
+        """Get dynamic variation for video processing to prevent pattern detection"""
+        # Use current time and random seed for variation selection
+        variation_seed = int(time.time()) % 7 + random.randint(1, 4)
+        
+        if platform == 'tiktok':
+            return {
+                'speed_factor': random.uniform(0.97, 1.03),  # Micro speed variations
+                'zoom_factor': random.uniform(1.08, 1.18),   # Dynamic zoom
+                'brightness': random.uniform(0.02, 0.08),    # Brightness shifts
+                'contrast': random.uniform(1.05, 1.15),      # Contrast adjustments
+                'saturation': random.uniform(1.15, 1.25),    # Saturation boost
+                'gamma': random.uniform(0.98, 1.05),         # Gamma correction
+                'unsharp_size': random.choice([3, 5, 7]),    # Sharpening variations
+                'unsharp_amount': random.uniform(0.6, 0.9),  # Sharpening strength
+                'noise_level': random.randint(20, 30),       # Noise intensity
+                'blur_radius': random.uniform(0.8, 1.5),     # Blur amount
+                'color_balance': {
+                    'r': random.uniform(0.05, 0.12),         # Red balance
+                    'g': random.uniform(-0.08, -0.02),       # Green balance  
+                    'b': random.uniform(0.01, 0.05)          # Blue balance
+                },
+                # Audio frequency manipulation (research-based)
+                'sample_rate_adjust': random.choice([44050, 44150, 44250]),  # Micro sample rate changes
+                'eq_frequency': random.choice([440, 880, 1320, 2200]),       # EQ target frequencies
+                'eq_gain': random.uniform(-0.5, 0.5),                        # EQ gain adjustments
+                'volume_factor': random.uniform(0.98, 1.02),                 # Volume micro-adjustments
+                'crf': random.randint(20, 24),                               # Dynamic quality
+                'bitrate': random.choice(['1.8M', '2M', '2.2M']),           # Bitrate variation
+                'audio_bitrate': random.choice(['128k', '160k', '192k'])     # Audio bitrate variation
+            }
+        elif platform == 'instagram':
+            return {
+                'speed_factor': random.uniform(0.98, 1.02),
+                'brightness': random.uniform(0.05, 0.10),
+                'contrast': random.uniform(1.10, 1.20),
+                'saturation': random.uniform(1.25, 1.35),
+                'gamma': random.uniform(1.02, 1.08),
+                'unsharp_size': random.choice([3, 5]),
+                'unsharp_amount': random.uniform(0.5, 0.7),
+                'noise_level': random.randint(15, 22),
+                'color_balance': {
+                    'r': random.uniform(0.03, 0.08),
+                    'g': random.uniform(-0.05, -0.01),
+                    'b': random.uniform(0.01, 0.04)
+                },
+                'sample_rate_adjust': random.choice([44080, 44120, 44180]),
+                'eq_frequency': random.choice([660, 1100, 1760]),
+                'eq_gain': random.uniform(-0.3, 0.3),
+                'volume_factor': random.uniform(0.99, 1.01),
+                'crf': random.randint(21, 25),
+                'bitrate': random.choice(['2M', '2.5M', '3M']),
+                'audio_bitrate': random.choice(['160k', '192k', '224k'])
+            }
+        else:  # youtube
+            return {
+                'speed_factor': random.uniform(0.995, 1.005),
+                'zoom_factor': random.uniform(1.02, 1.08),
+                'brightness': random.uniform(0.01, 0.05),
+                'contrast': random.uniform(1.02, 1.10),
+                'saturation': random.uniform(1.05, 1.15),
+                'gamma': random.uniform(0.99, 1.03),
+                'unsharp_size': random.choice([3, 5]),
+                'unsharp_amount': random.uniform(0.4, 0.6),
+                'noise_level': random.randint(8, 18),
+                'color_balance': {
+                    'r': random.uniform(0.01, 0.05),
+                    'g': random.uniform(-0.03, 0.01),
+                    'b': random.uniform(0.01, 0.03)
+                },
+                'sample_rate_adjust': random.choice([44090, 44110, 44130]),
+                'eq_frequency': random.choice([800, 1200, 1600, 2400]),
+                'eq_gain': random.uniform(-0.2, 0.2),
+                'volume_factor': random.uniform(0.995, 1.005),
+                'crf': random.randint(18, 22),
+                'bitrate': random.choice(['3M', '4M', '5M']),
+                'audio_bitrate': random.choice(['192k', '256k', '320k'])
+            }
     
     def apply_custom_commands(self, input_path, commands):
         """Apply custom commands to video"""

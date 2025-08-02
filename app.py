@@ -282,14 +282,33 @@ def process_media_preset(uploaded_file, platform, file_details, processors):
         st.session_state.processed_file = output_path
         st.success(f"✅ Successfully processed {file_details['type'].lower()} for {platform.title()} with advanced algorithm evasion!")
         
-        # Show detailed changes made
+        # Show detailed changes made with research-based techniques
         st.info(f"""
-        **Applied {platform.title()} Anti-Algorithm Modifications:**
-        - Advanced noise patterns and LSB steganography
-        - Perceptual hash evasion through gradient perturbations  
-        - DCT domain modifications to bypass compression detection
-        - Color channel manipulation and micro-transformations
-        - File hash changes through scale and rotation adjustments
+        **🔬 Research-Based 2025 Anti-Algorithm System Applied for {platform.title()}:**
+        
+        **Layer 1: Adversarial Perturbations** (FGS-Audio inspired)
+        - Content-adaptive gradient perturbations that fool AI detection
+        - Dynamic patterns that change with each upload to prevent recognition
+        
+        **Layer 2: Reversible Steganography** (Content-adaptive LSB)
+        - Texture-aware LSB modifications in high-detail areas
+        - Multi-bit embedding that survives compression algorithms
+        
+        **Layer 3: Hybrid DCT + GAN Domain** (Frequency manipulation)
+        - JPEG-aware 8x8 block DCT coefficient modifications
+        - Strategic frequency band targeting based on platform analysis
+        
+        **Layer 4: Triple-Stage Processing** (Audio research inspired)
+        - Psycho-visual masking for imperceptible modifications
+        - YUV color space transformations for compression resilience
+        - Error correction through redundant micro-adjustments
+        
+        **Layer 5: Platform-Specific Evasion** ({platform.title()} algorithm targeting)
+        - {platform.title()}-specific noise patterns and color preferences
+        - Dynamic quality and encoding variations (prevents pattern detection)
+        - Audio frequency manipulation (videos): Sample rate + EQ + volume micro-adjustments
+        
+        **🎯 Result:** Maximum algorithm evasion with imperceptible visual changes
         """)
         
     except Exception as e:

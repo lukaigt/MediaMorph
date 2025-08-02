@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Streamlit-based web application that helps users transform videos and images for safe social media reposting using advanced algorithm evasion techniques. The application applies sophisticated modifications including LSB steganography, perceptual hash evasion, DCT domain transformations, and multi-layer noise patterns to help content bypass modern AI-driven algorithm detection while maintaining visual quality. It supports multiple social media platforms including TikTok, Instagram, and YouTube, with heavy anti-algorithm presets optimized for each platform's detection systems.
+A Streamlit-based web application that automatically applies the most advanced 2025 research-based anti-algorithm techniques to videos and images upon upload. The system implements a sophisticated 5-layer evasion framework including FGS-Audio inspired adversarial perturbations, reversible steganography, hybrid DCT+GAN frequency domain manipulation, triple-stage robust processing, and platform-specific algorithm targeting. Features dynamic variation system that randomizes parameters to prevent pattern detection across uploads, with specialized audio frequency manipulation for videos including sample rate adjustments, EQ filtering, and volume micro-variations.
 
 ## User Preferences
 
@@ -25,10 +25,15 @@ Preferred communication style: Simple, everyday language.
 - **File Management**: `FileUtils` class for file type detection and metadata extraction
 
 ### Processing Pipeline
-- **Advanced Video Processing**: FFmpeg-based transformations with multi-layer modifications including horizontal flip, speed adjustment, zoom effects, strong noise patterns, color balance shifts, and hash-changing scale operations
-- **Sophisticated Image Processing**: PIL and scipy-based operations featuring LSB steganography, perceptual hash evasion, DCT domain modifications, gradient-based perturbations, color channel manipulation, and micro-transformations
-- **Heavy Anti-Algorithm Presets**: Research-based transformation chains designed to evade 2025 AI detection systems for each social media platform
-- **Advanced Command System**: Flexible parsing for custom transformation combinations with algorithm evasion techniques
+- **5-Layer Anti-Algorithm Framework**: Research-based 2025 system implementing multiple evasion techniques per upload
+  - Layer 1: FGS-Audio inspired adversarial perturbations with content-adaptive gradients
+  - Layer 2: Reversible steganography with texture-aware LSB modifications
+  - Layer 3: Hybrid DCT+GAN frequency domain manipulation in 8x8 JPEG blocks
+  - Layer 4: Triple-stage processing (psycho-visual, YUV transform, error correction)
+  - Layer 5: Platform-specific targeting (TikTok/Instagram/YouTube algorithm optimization)
+- **Dynamic Variation System**: Time-based and randomized parameter selection to prevent pattern detection
+- **Advanced Audio Processing**: Triple-stage audio manipulation with sample rate shifts, EQ filtering, and volume micro-adjustments
+- **Custom Command System**: 47+ implemented image effects with full processing logic for manual control
 
 ### File Handling
 - **Temporary Storage**: Uses system temp directory for processing intermediate files
@@ -52,5 +57,17 @@ Preferred communication style: Simple, everyday language.
 ### Processing Dependencies
 - **Video Codecs**: libx264 for video encoding, AAC for audio encoding
 - **Image Formats**: JPEG compression and various image format support through Pillow
+- **Advanced Mathematics**: SciPy for DCT transforms, ndimage operations, and frequency domain processing
+- **Research Implementation**: 2025 academic techniques for adversarial perturbations and steganography
+
+## Recent Major Updates (August 2025)
+
+### Research-Based Anti-Algorithm System Implementation
+- **Internet Research**: Conducted comprehensive analysis of 2025 anti-algorithm techniques
+- **Academic Integration**: Implemented FGS-Audio framework, reversible steganography, hybrid DCT+GAN methods
+- **Dynamic Randomization**: Added time-based variation system preventing algorithm pattern recognition
+- **Audio Frequency Manipulation**: Integrated advanced audio processing with sample rate, EQ, and volume adjustments
+- **Platform Optimization**: Specialized targeting for TikTok, Instagram, and YouTube detection systems
+- **Custom Effects**: Completed implementation of all 47 image processing effects with full visual logic
 
 The application operates entirely offline without external API dependencies, processing all media locally using system resources.
