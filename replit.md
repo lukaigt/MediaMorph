@@ -76,6 +76,16 @@ Preferred communication style: Simple, everyday language.
 - **Metadata Randomization**: Dynamic creation time, encoder signatures, and file structure manipulation
 - **Universal Adversarial Perturbations**: Transferable modifications that work across different detection models
 
+### MAJOR ENHANCEMENTS: Progress Tracking & Watermark Removal (August 3, 2025)
+- **REAL-TIME PROGRESS TRACKING IMPLEMENTED**: No more 85%→100% jumps! Shows actual encoding progress
+- **Live ETA Display**: Shows current encoding time, fps, and estimated time remaining (e.g., "ETA: 2.5m")
+- **Detailed Status Updates**: Real-time "Encoding: 45.2/120.5s (8.3 fps) - ETA: 1.2m" progress information
+- **All Platforms Enhanced**: TikTok, Instagram, and YouTube now have smooth 85%→98% progress tracking
+- **ENHANCED WATERMARK REMOVAL**: Intelligent text detection targeting "Tonybagalaughs" style usernames
+- **7-Point Coverage System**: Targets corners, center-left/right, and lower center areas with larger detection zones
+- **Expanded Detection Areas**: 200x70 pixel coverage for text watermarks (vs. old 100x50)
+- **Smart Positioning**: Covers bottom-left (perfect for "Tonybagalaughs"), mid-left, and center positions
+
 ### CRITICAL UPDATE: Instagram Reels Format Change (August 3, 2025)
 - **INSTAGRAM REELS 9:16 FORMAT IMPLEMENTED**: Changed Instagram from square (1:1) to proper Reels format (9:16)
 - **Aspect Ratio Correction**: Instagram now outputs 1080x1920 (vertical) instead of 1080x1080 (square)

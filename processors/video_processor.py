@@ -13,6 +13,7 @@ class VideoProcessor:
         self.session_history = []  # Track processing patterns to avoid repetition
         self.max_history = 10      # Remember last 10 processing sessions
         self.audio_quality = '192k'  # Default audio quality
+        self._encoding_start_time = time.time()  # Initialize encoding timer
         
         # 2025 ML-Mimicking Parameters
         self.adversarial_params = self._init_adversarial_params()
@@ -32,6 +33,64 @@ class VideoProcessor:
         """Update progress if callback is set"""
         if hasattr(self, 'progress_callback') and self.progress_callback:
             self.progress_callback(percentage, text)
+    
+    def _monitor_encoding_progress(self, process, duration, start_percent, end_percent):
+        """Monitor FFmpeg encoding progress in real-time"""
+        import re
+        import time
+        
+        print(f"🎬 Starting real-time progress monitoring ({start_percent}% → {end_percent}%)")
+        
+        current_time = 0
+        while True:
+            output = process.stderr.readline()
+            if output == b'' and process.poll() is not None:
+                break
+            
+            if output:
+                line = output.decode('utf-8', errors='ignore')
+                
+                # Extract current time from FFmpeg output (format: time=00:01:23.45)
+                time_match = re.search(r'time=(\d+):(\d+):(\d+\.\d+)', line)
+                if time_match:
+                    hours = int(time_match.group(1))
+                    minutes = int(time_match.group(2))
+                    seconds = float(time_match.group(3))
+                    current_time = hours * 3600 + minutes * 60 + seconds
+                    
+                    # Calculate progress percentage
+                    if duration > 0:
+                        encoding_progress = (current_time / duration) * 100
+                        # Map to our progress range
+                        total_progress = start_percent + (encoding_progress / 100) * (end_percent - start_percent)
+                        total_progress = min(total_progress, end_percent)
+                        
+                        # Extract current fps for detailed status
+                        fps_match = re.search(r'fps=\s*([0-9.]+)', line)
+                        fps = fps_match.group(1) if fps_match else "0"
+                        
+                        # Calculate estimated time remaining
+                        if current_time > 0:
+                            rate = current_time / max(1, time.time() - getattr(self, '_encoding_start_time', time.time()))
+                            remaining_seconds = max(0, duration - current_time)
+                            eta_minutes = remaining_seconds / max(rate, 0.1) / 60
+                            
+                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps) - ETA: {eta_minutes:.1f}m"
+                        else:
+                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps)"
+                        
+                        self.update_progress(int(total_progress), status_text)
+                        
+                        # Small delay to prevent too frequent updates
+                        time.sleep(0.1)
+        
+        # Wait for process to complete
+        process.wait()
+        if process.returncode != 0:
+            raise Exception(f"FFmpeg encoding failed with code {process.returncode}")
+            
+        print(f"✅ Encoding completed successfully!")
+        self._encoding_start_time = time.time()  # Reset for next encoding
     
     def _init_adversarial_params(self):
         """Initialize FGSM-inspired adversarial parameters"""
@@ -485,32 +544,41 @@ class VideoProcessor:
                 'metadata:s:v:1': f'comment={metadata_randomization["comment"]}'
             }
             
-            self.update_progress(85, "Encoding 1080p60 with validated parameters...")
+            self.update_progress(85, "Starting TikTok 1080p60 encoding...")
             
-            # ENCODING WITH VALIDATION
+            # ENCODING WITH REAL-TIME PROGRESS TRACKING
             try:
                 print(f"Final encoding with parameters: {encoding_params}")
                 
+                # Get video duration for accurate progress tracking
+                probe = ffmpeg.probe(input_path)
+                duration = float(probe['format']['duration'])
+                print(f"Video duration: {duration:.2f} seconds")
+                
+                # Use progress tracking during encoding
                 if has_audio:
                     print("Encoding with audio preservation...")
-                    (
+                    process = (
                         ffmpeg
                         .output(video, input_stream.audio, output_path, 
                                acodec='copy', **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 else:
                     print("Encoding video only...")
-                    (
+                    process = (
                         ffmpeg
                         .output(video, output_path, **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 
+                # Track real-time encoding progress
+                self._monitor_encoding_progress(process, duration, 85, 98)
+                
                 # VALIDATE OUTPUT QUALITY
-                self.update_progress(95, "Validating output quality...")
+                self.update_progress(99, "Validating TikTok output quality...")
                 
                 probe = ffmpeg.probe(output_path)
                 video_stream = next(s for s in probe['streams'] if s['codec_type'] == 'video')
@@ -744,29 +812,38 @@ class VideoProcessor:
                 # Note: Metadata injection sometimes causes FFmpeg errors, applied separately if needed
             }
             
-            self.update_progress(85, "Encoding Instagram 1080x1080...")
+            self.update_progress(85, "Starting Instagram 1080x1920 encoding...")
             
             try:
                 print(f"Instagram encoding with parameters: {encoding_params}")
                 
+                # Get video duration for accurate progress tracking
+                probe = ffmpeg.probe(input_path)
+                duration = float(probe['format']['duration'])
+                print(f"Video duration: {duration:.2f} seconds")
+                
+                # Use progress tracking during encoding
                 if has_audio:
-                    (
+                    process = (
                         ffmpeg
                         .output(video, input_stream.audio, output_path, 
                                acodec='copy', **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 else:
-                    (
+                    process = (
                         ffmpeg
                         .output(video, output_path, **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 
+                # Track real-time encoding progress
+                self._monitor_encoding_progress(process, duration, 85, 98)
+                
                 # Validate output
-                self.update_progress(95, "Validating Instagram output...")
+                self.update_progress(99, "Validating Instagram output...")
                 probe = ffmpeg.probe(output_path)
                 video_stream = next(s for s in probe['streams'] if s['codec_type'] == 'video')
                 width = int(video_stream['width'])
@@ -1001,29 +1078,38 @@ class VideoProcessor:
                 'metadata:s:v:1': f'comment={metadata_randomization["comment"]}'
             }
             
-            self.update_progress(85, "Encoding YouTube 1080p60 CRF 15...")
+            self.update_progress(85, "Starting YouTube 1080p60 CRF 15 encoding...")
             
             try:
                 print(f"YouTube encoding with parameters: {encoding_params}")
                 
+                # Get video duration for accurate progress tracking
+                probe = ffmpeg.probe(input_path)
+                duration = float(probe['format']['duration'])
+                print(f"Video duration: {duration:.2f} seconds")
+                
+                # Use progress tracking during encoding
                 if has_audio:
-                    (
+                    process = (
                         ffmpeg
                         .output(video, input_stream.audio, output_path, 
                                acodec='copy', **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 else:
-                    (
+                    process = (
                         ffmpeg
                         .output(video, output_path, **encoding_params)
                         .overwrite_output()
-                        .run(quiet=False)
+                        .run_async(pipe_stderr=True)
                     )
                 
+                # Track real-time encoding progress
+                self._monitor_encoding_progress(process, duration, 85, 98)
+                
                 # Validate output
-                self.update_progress(95, "Validating YouTube output...")
+                self.update_progress(99, "Validating YouTube output...")
                 probe = ffmpeg.probe(output_path)
                 video_stream = next(s for s in probe['streams'] if s['codec_type'] == 'video')
                 width = int(video_stream['width'])

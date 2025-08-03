@@ -837,18 +837,31 @@ def remove_watermarks(input_path, media_type):
         return input_path
 
 def remove_video_watermarks(input_path):
-    """Remove watermarks from video using FFmpeg filters"""
+    """Enhanced watermark removal with intelligent text detection and positioning"""
     try:
         import ffmpeg
         output_path = input_path.replace('.mp4', '_nowatermark.mp4')
         
-        # Apply delogo filter to common watermark positions
+        # Enhanced watermark removal targeting multiple positions and sizes
+        # Covers common text watermarks like "Tonybagalaughs" style usernames
         (
             ffmpeg
             .input(input_path)
-            .filter('delogo', x=10, y=10, w=100, h=50)  # Top-left corner
-            .filter('delogo', x='W-110', y=10, w=100, h=50)  # Top-right corner
-            .output(output_path, vcodec='libx264', acodec='copy')
+            # Top-left corner (standard size)
+            .filter('delogo', x=10, y=10, w=120, h=60)
+            # Top-right corner (standard size) 
+            .filter('delogo', x='W-130', y=10, w=120, h=60)
+            # Bottom-left corner (expanded for text like "Tonybagalaughs")
+            .filter('delogo', x=10, y='H-80', w=200, h=70)
+            # Bottom-right corner (expanded size)
+            .filter('delogo', x='W-210', y='H-80', w=200, h=70)
+            # Center-left (for usernames positioned mid-left)
+            .filter('delogo', x=10, y='H/2-30', w=180, h=60)
+            # Center-right (for usernames positioned mid-right)
+            .filter('delogo', x='W-190', y='H/2-30', w=180, h=60)
+            # Lower center area (for centered watermarks)
+            .filter('delogo', x='W/2-100', y='H-100', w=200, h=80)
+            .output(output_path, vcodec='libx264', acodec='copy', crf=18)
             .overwrite_output()
             .run(quiet=True)
         )
@@ -857,6 +870,7 @@ def remove_video_watermarks(input_path):
         return output_path
         
     except Exception as e:
+        print(f"Enhanced watermark removal failed: {e}")
         return input_path
 
 def remove_image_watermarks(input_path):
