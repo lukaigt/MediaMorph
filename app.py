@@ -143,7 +143,11 @@ def main():
         
         # Platform preset buttons
         st.header("🎯 Advanced Algorithm Evasion Presets")
-        st.markdown("**Choose your target platform for MAXIMUM protection that algorithms can't detect:**")
+        if st.session_state.batch_mode and len(uploaded_files) > 1:
+            st.markdown(f"**🔄 BULK PROCESSING MODE: Process all {len(uploaded_files)} files at once with MAXIMUM protection:**")
+            st.info(f"📦 Ready to bulk process: {len(uploaded_files)} files | All files will be processed with the same settings")
+        else:
+            st.markdown("**Choose your target platform for MAXIMUM protection that algorithms can't detect:**")
         
         col1, col2, col3 = st.columns(3)
         
@@ -320,9 +324,19 @@ def main():
         
     # Batch processing results section
     if st.session_state.processed_files and len(st.session_state.processed_files) > 0:
-        st.header("📦 Batch Processing Results")
+        st.header("📦 Bulk Processing Results")
         
         platform_name = st.session_state.current_platform.title() if st.session_state.current_platform else "Unknown"
+        
+        # Show processing summary
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("✅ Files Processed", len(st.session_state.processed_files))
+        with col2:
+            st.metric("🎯 Target Platform", platform_name)
+        with col3:
+            total_size = sum(os.path.getsize(f['processed_path']) for f in st.session_state.processed_files if os.path.exists(f['processed_path']))
+            st.metric("📊 Total Output Size", f"{total_size / (1024*1024):.1f} MB")
         st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {platform_name}!")
         
         # Show file list
@@ -769,15 +783,27 @@ def process_batch_files(uploaded_files, platform, processors, options):
     try:
         st.session_state.processing = True
         st.session_state.processed_files = []
+        st.session_state.current_platform = platform
         total_files = len(uploaded_files)
+        
+        # Create progress display for batch processing
+        st.session_state.progress_display = st.empty()
+        
+        update_detailed_progress(
+            "Batch Initialization", 
+            f"Starting bulk processing of {total_files} files for {platform.title()}...", 
+            f"{total_files*25}s", 
+            0, 
+            total_files
+        )
         
         for i, uploaded_file in enumerate(uploaded_files):
             file_details = processors['file_utils'].get_file_info(uploaded_file)
             
             update_detailed_progress(
                 "Batch Processing", 
-                f"Processing file {i+1}/{total_files}: {file_details['name']}", 
-                f"{(total_files-i)*30}s", 
+                f"File {i+1}/{total_files}: {file_details['name']} ({file_details['size']})", 
+                f"{(total_files-i)*25}s", 
                 i+1, 
                 total_files
             )
@@ -1055,12 +1081,10 @@ def remove_video_watermarks_fallback(input_path):
                 bl_w = int(width * 0.25)   # 25% of width
                 bl_h = int(height * 0.08)  # 8% of height
                 
-                # Use blur filter instead of delogo for better compatibility
-                watermark_filter = f'boxblur=luma_radius=20:luma_power=3:enable=between(y\\,{bl_y}\\,{bl_y + bl_h})*between(x\\,{bl_x}\\,{bl_x + bl_w})'
-                
+                # Use simple delogo filter for watermark removal
                 cmd = [
                     'ffmpeg', '-i', input_path,
-                    '-vf', watermark_filter,
+                    '-vf', f'delogo=x={bl_x}:y={bl_y}:w={bl_w}:h={bl_h}',
                     '-c:a', 'copy',
                     '-crf', '18',
                     '-preset', 'fast',
