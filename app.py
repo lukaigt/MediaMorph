@@ -459,6 +459,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
     if options is None:
         options = {}
     
+    temp_input_path = None
     try:
         st.session_state.processing = True
         
@@ -673,6 +674,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
 
 def process_custom_command(uploaded_file, command_string, file_details, processors, options=None):
     """Process custom command string and apply to media"""
+    temp_input_path = None
     try:
         # Parse the command
         parser = processors['command_parser']
