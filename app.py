@@ -59,8 +59,18 @@ def main():
     with st.sidebar:
         st.header("⚙️ Advanced Settings")
         
-        # Batch mode toggle
-        st.session_state.batch_mode = st.checkbox("🔄 Batch Processing Mode", value=st.session_state.batch_mode)
+        # Batch mode toggle - Make it prominent
+        st.subheader("📦 Processing Mode")
+        st.session_state.batch_mode = st.checkbox(
+            "🔄 **BULK PROCESSING MODE**", 
+            value=st.session_state.batch_mode,
+            help="Enable this to upload and process multiple files at once!"
+        )
+        
+        if st.session_state.batch_mode:
+            st.success("✅ Bulk mode enabled - you can now select multiple files!")
+        else:
+            st.info("💡 Enable bulk mode to process multiple files at once")
         
         # Audio quality for videos
         st.subheader("🎵 Audio Quality")
@@ -89,20 +99,32 @@ def main():
     st.header("📁 Upload Media")
     
     if st.session_state.batch_mode:
+        st.success("🔄 **BULK PROCESSING MODE ACTIVE** - You can select multiple files!")
         uploaded_files = st.file_uploader(
-            "Choose multiple video or image files",
+            "📦 DRAG & DROP MULTIPLE FILES HERE (Hold Ctrl/Cmd to select multiple)",
             type=['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'],
             accept_multiple_files=True,
-            help="Supported formats: MP4, MOV, AVI, MKV, WebM for videos | JPG, PNG, GIF, BMP, TIFF for images"
+            help="🔥 BULK MODE: Select multiple files at once! Hold Ctrl (Windows) or Cmd (Mac) to select multiple files",
+            key="bulk_uploader"
         )
         uploaded_file = uploaded_files[0] if uploaded_files else None
         if uploaded_files and len(uploaded_files) > 1:
-            st.info(f"📦 Batch mode: {len(uploaded_files)} files selected")
+            st.success(f"📦 **{len(uploaded_files)} FILES SELECTED FOR BULK PROCESSING!**")
+            
+            # Show all selected files
+            with st.expander(f"📋 View all {len(uploaded_files)} selected files", expanded=True):
+                for i, f in enumerate(uploaded_files, 1):
+                    file_size = f.size / (1024*1024)  # MB
+                    st.write(f"{i}. **{f.name}** ({file_size:.1f} MB)")
+        elif uploaded_files and len(uploaded_files) == 1:
+            st.info("📦 1 file selected - Add more files for bulk processing!")
     else:
+        st.info("💡 **TIP:** Enable 'Batch Processing Mode' in the sidebar to upload multiple files at once!")
         uploaded_file = st.file_uploader(
             "Choose a video or image file",
             type=['mp4', 'mov', 'avi', 'mkv', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'],
-            help="Supported formats: MP4, MOV, AVI, MKV, WebM for videos | JPG, PNG, GIF, BMP, TIFF for images"
+            help="Supported formats: MP4, MOV, AVI, MKV, WebM for videos | JPG, PNG, GIF, BMP, TIFF for images",
+            key="single_uploader"
         )
         uploaded_files = [uploaded_file] if uploaded_file else []
     
