@@ -131,25 +131,15 @@ def main():
         
         # Progress tracking display
         if st.session_state.processing:
-            st.header("🔄 Processing Progress")
+            if not hasattr(st.session_state, 'progress_display') or st.session_state.progress_display is None:
+                st.session_state.progress_display = st.empty()
             
-            # Create columns for better progress display
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                progress_bar = st.progress(st.session_state.progress / 100)
-                st.write(f"**{st.session_state.progress}%** - {st.session_state.progress_text}")
-            with col2:
-                if st.session_state.progress >= 85 and st.session_state.progress < 98:
-                    st.write("📊 **Live Encoding**")
-                    st.write("⏱️ Real-time progress")
+            # Update detailed progress display
+            _update_progress_display()
             
-            # Auto-refresh while processing with faster updates during encoding
-            if st.session_state.progress < 100:
-                if st.session_state.progress >= 85 and st.session_state.progress < 98:
-                    time.sleep(0.3)  # Faster updates during encoding
-                else:
-                    time.sleep(0.5)  # Normal updates
-                st.rerun()
+            # Auto-refresh while processing
+            time.sleep(0.5)  # Regular updates
+            st.rerun()
         
         # Platform preset buttons
         st.header("🎯 Advanced Algorithm Evasion Presets")
@@ -316,12 +306,13 @@ def main():
             }
             process_custom_command(uploaded_file, custom_command, file_details, processors, options)
         
-        # Processing indicator with progress bar (improved)
+        # Processing indicator with detailed steps
         if st.session_state.processing:
-            st.write("### 🔄 Processing...")
-            if st.session_state.progress_bar is None:
-                st.session_state.progress_bar = st.progress(0)
-                st.session_state.progress_text_element = st.empty()
+            if not hasattr(st.session_state, 'progress_display') or st.session_state.progress_display is None:
+                st.session_state.progress_display = st.empty()
+            
+            # Update display
+            _update_progress_display()
             
             # Auto-refresh while processing
             time.sleep(0.1)
@@ -424,35 +415,80 @@ def main():
             st.session_state.current_platform = None
             st.rerun()
 
-def update_progress(percentage, text):
-    """Update the progress bar and text"""
-    st.session_state.progress = percentage
-    st.session_state.progress_text = text
-    
-    # Update progress bar if it exists
-    if st.session_state.progress_bar is not None:
-        st.session_state.progress_bar.progress(percentage / 100.0)
-    
-    # Update progress text if it exists
-    if st.session_state.progress_text_element is not None:
-        st.session_state.progress_text_element.text(f"🔄 {text} ({percentage}%)")
-
-def _smooth_progress_transition(from_percent, to_percent, steps=10, delay=0.1):
-    """Create smooth progress transitions between major steps"""
+def update_detailed_progress(step_name, details, estimated_time_left=None, current_step=None, total_steps=None):
+    """Update detailed step-by-step progress with time estimates"""
     import time
     
-    if from_percent >= to_percent:
+    # Initialize if not exists
+    if not hasattr(st.session_state, 'detailed_progress'):
+        st.session_state.detailed_progress = {
+            'steps': [],
+            'start_time': time.time(),
+            'current_step': 0,
+            'total_steps': 0
+        }
+    
+    # Update current step info
+    step_info = {
+        'name': step_name,
+        'details': details,
+        'timestamp': time.time(),
+        'estimated_time': estimated_time_left
+    }
+    
+    if current_step is not None:
+        st.session_state.detailed_progress['current_step'] = current_step
+    if total_steps is not None:
+        st.session_state.detailed_progress['total_steps'] = total_steps
+    
+    # Add or update current step
+    if len(st.session_state.detailed_progress['steps']) == 0 or st.session_state.detailed_progress['steps'][-1]['name'] != step_name:
+        st.session_state.detailed_progress['steps'].append(step_info)
+    else:
+        st.session_state.detailed_progress['steps'][-1] = step_info
+    
+    # Update display if elements exist
+    if hasattr(st.session_state, 'progress_display') and st.session_state.progress_display is not None:
+        _update_progress_display()
+
+def _update_progress_display():
+    """Update the detailed progress display"""
+    import time
+    
+    if not hasattr(st.session_state, 'detailed_progress') or not st.session_state.detailed_progress['steps']:
         return
+    
+    progress_data = st.session_state.detailed_progress
+    current_time = time.time()
+    elapsed_time = current_time - progress_data['start_time']
+    
+    # Build display content
+    display_content = []
+    display_content.append("### 🔄 Processing Steps")
+    display_content.append(f"**Elapsed Time:** {elapsed_time:.1f}s")
+    
+    if progress_data['total_steps'] > 0:
+        display_content.append(f"**Progress:** Step {progress_data['current_step']}/{progress_data['total_steps']}")
+    
+    display_content.append("\n**Current Steps:**")
+    
+    for i, step in enumerate(progress_data['steps'][-5:]):  # Show last 5 steps
+        step_time = step['timestamp'] - progress_data['start_time']
+        time_str = f"[{step_time:.1f}s]"
         
-    step_size = (to_percent - from_percent) / steps
-    for i in range(steps + 1):
-        current_progress = from_percent + (step_size * i)
-        step_text = f"Processing step {i+1}/{steps+1}..."
-        if i == steps:
-            step_text = f"Step completed!"
+        if i == len(progress_data['steps'][-5:]) - 1:  # Current step
+            status = "🔄"
+            if step['estimated_time']:
+                time_str += f" (ETA: {step['estimated_time']})"
+        else:
+            status = "✅"
         
-        update_progress(int(current_progress), step_text)
-        time.sleep(delay)
+        display_content.append(f"{status} **{step['name']}** {time_str}")
+        display_content.append(f"   └─ {step['details']}")
+    
+    # Update display
+    if hasattr(st.session_state, 'progress_display') and st.session_state.progress_display is not None:
+        st.session_state.progress_display.markdown("\n".join(display_content))
     
 def process_media_preset(uploaded_file, platform, file_details, processors, options=None):
     """Enhanced function to process media with platform preset and advanced features"""
@@ -463,13 +499,10 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
     try:
         st.session_state.processing = True
         
-        # Create progress elements
-        progress_container = st.container()
-        with progress_container:
-            st.session_state.progress_text_element = st.empty()
-            st.session_state.progress_bar = st.progress(0)
+        # Create detailed progress display
+        st.session_state.progress_display = st.empty()
         
-        update_progress(0, "Initializing processing...")
+        update_detailed_progress("Initialization", "Setting up processing environment...", "5s", 1, 8)
         
         # Handle different video formats and convert to MP4 if needed
         original_format = file_details['name'].split('.')[-1].lower()
@@ -488,7 +521,7 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
             processor = processors['image']
             needs_conversion = False
         
-        update_progress(10, "Reading file data...")
+        update_detailed_progress("File Reading", "Loading and validating file data...", "3s", 2, 8)
         
         # Reset file pointer and read data
         uploaded_file.seek(0)
@@ -499,24 +532,24 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
             temp_input.write(file_data)
             temp_input_path = temp_input.name
         
-        update_progress(20, "Preparing advanced processing...")
+        update_detailed_progress("Processing Setup", "Configuring advanced algorithms and settings...", "2s", 3, 8)
         
         # Pre-processing: Auto-crop black borders if enabled
         if options.get('auto_crop', False) and file_details['category'] == 'video':
-            update_progress(25, "Auto-cropping black borders...")
+            update_detailed_progress("Auto-Crop", "Detecting and removing black borders...", "10s", 4, 8)
             temp_input_path = auto_crop_video(temp_input_path)
         
         # Pre-processing: Watermark removal if enabled
         if options.get('watermark_removal', False):
-            update_progress(30, "Attempting watermark removal...")
+            update_detailed_progress("Watermark Removal", "Analyzing and removing watermarks...", "15s", 5, 8)
             temp_input_path = remove_watermarks(temp_input_path, file_details['category'])
         
         # Format conversion if needed
         if needs_conversion:
-            update_progress(35, f"Converting {original_format.upper()} to MP4...")
+            update_detailed_progress("Format Conversion", f"Converting {original_format.upper()} to MP4...", "20s", 6, 8)
             temp_input_path = convert_video_format(temp_input_path, '.mp4')
         
-        update_progress(40, f"Applying MAXIMUM {platform.upper()} protection...")
+        update_detailed_progress("Algorithm Protection", f"Applying MAXIMUM {platform.upper()} protection layers...", "30s", 7, 8)
         
         # Process the file with enhanced settings
         if file_details['category'] == 'video':
@@ -524,31 +557,23 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
             if hasattr(processor, 'set_audio_quality'):
                 processor.set_audio_quality(options.get('audio_quality', '192k'))
             if hasattr(processor, 'set_progress_callback'):
-                processor.set_progress_callback(update_progress)
-            
-            # Smooth progress transition to encoding phase
-            _smooth_progress_transition(40, 50, 5, 0.2)
+                processor.set_progress_callback(lambda p, t: update_detailed_progress("Video Processing", t, None, None, None))
             
             output_path = processor.apply_preset(temp_input_path, platform)
         else:
-            # For images, use simpler progress tracking
-            _smooth_progress_transition(40, 85, 8, 0.15)
+            update_detailed_progress("Image Processing", "Applying image transformations...", "10s", 7, 8)
             output_path = processor.apply_preset(temp_input_path, platform)
-            _smooth_progress_transition(85, 95, 3, 0.1)
-        
-        update_progress(70, "Optimizing file size...")
         
         # Apply file size optimization if specified
         size_limit = options.get('size_limit', 'No Limit')
         if size_limit != 'No Limit':
+            update_detailed_progress("Size Optimization", f"Optimizing file size to {size_limit}...", "10s", 8, 8)
             output_path = optimize_file_size(output_path, size_limit, file_details['category'])
-        
-        update_progress(90, "Finalizing...")
         
         # Update session state
         st.session_state.processed_file = output_path
         st.session_state.processing = False
-        update_progress(100, "Processing complete!")
+        update_detailed_progress("Complete", "Processing finished successfully!", None, 8, 8)
         
         st.success(f"✅ Successfully processed {file_details['type'].lower()} for {platform.title()} with MAXIMUM algorithm evasion!")
         
@@ -749,9 +774,12 @@ def process_batch_files(uploaded_files, platform, processors, options):
         for i, uploaded_file in enumerate(uploaded_files):
             file_details = processors['file_utils'].get_file_info(uploaded_file)
             
-            update_progress(
-                (i / total_files) * 100, 
-                f"Processing file {i+1}/{total_files}: {file_details['name']}"
+            update_detailed_progress(
+                "Batch Processing", 
+                f"Processing file {i+1}/{total_files}: {file_details['name']}", 
+                f"{(total_files-i)*30}s", 
+                i+1, 
+                total_files
             )
             
             # Process each file
@@ -764,7 +792,7 @@ def process_batch_files(uploaded_files, platform, processors, options):
                 })
         
         st.session_state.processing = False
-        update_progress(100, f"Batch processing complete! {len(st.session_state.processed_files)} files processed")
+        update_detailed_progress("Batch Complete", f"Successfully processed {len(st.session_state.processed_files)} files!", None, total_files, total_files)
         
         # Show batch results
         st.success(f"✅ Successfully processed {len(st.session_state.processed_files)} files for {platform.title()}!")
@@ -1028,7 +1056,7 @@ def remove_video_watermarks_fallback(input_path):
                 bl_h = int(height * 0.08)  # 8% of height
                 
                 # Use blur filter instead of delogo for better compatibility
-                watermark_filter = f'boxblur=enable=\'between(y,{bl_y},{bl_y + bl_h})*between(x,{bl_x},{bl_x + bl_w})\':luma_radius=20:luma_power=3'
+                watermark_filter = f'boxblur=luma_radius=20:luma_power=3:enable=between(y\\,{bl_y}\\,{bl_y + bl_h})*between(x\\,{bl_x}\\,{bl_x + bl_w})'
                 
                 cmd = [
                     'ffmpeg', '-i', input_path,
