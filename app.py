@@ -630,11 +630,11 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
         st.error(f"Debug details: {traceback.format_exc()}")
     finally:
         # Cleanup temp file
-        if 'temp_input_path' in locals() and temp_input_path:
-            try:
+        try:
+            if 'temp_input_path' in locals() and temp_input_path and os.path.exists(temp_input_path):
                 os.unlink(temp_input_path)
-            except:
-                pass
+        except:
+            pass
 
 def process_custom_command(uploaded_file, command_string, file_details, processors, options=None):
     """Process custom command string and apply to media"""
@@ -695,11 +695,11 @@ def process_custom_command(uploaded_file, command_string, file_details, processo
         st.error(f"Debug details: {traceback.format_exc()}")
     finally:
         # Cleanup temp file
-        if 'temp_input_path' in locals() and temp_input_path:
-            try:
+        try:
+            if 'temp_input_path' in locals() and temp_input_path and os.path.exists(temp_input_path):
                 os.unlink(temp_input_path)
-            except:
-                pass
+        except:
+            pass
         st.rerun()
 
 def process_batch_files(uploaded_files, platform, processors, options):
