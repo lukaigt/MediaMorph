@@ -577,19 +577,20 @@ class VideoProcessor:
                 has_audio = False
                 print(f"Warning: Audio detection failed: {e}")
 
-            self.update_progress(35, "Applying Instagram square format...")
+            self.update_progress(35, "Applying Instagram Reels 9:16 format...")
             
-            # INSTAGRAM SQUARE CROP (Essential preprocessing)
-            def square_crop_advanced(v):
-                return v.filter('crop', 'min(iw,ih)', 'min(iw,ih)')
+            # INSTAGRAM REELS 9:16 FORMAT (Essential preprocessing)
+            def reels_format_advanced(v):
+                return v.filter('pad', 'max(iw,ih*9/16)', 'max(iw*16/9,ih)', '(ow-iw)/2', '(oh-ih)/2', color='#000000')
             
-            def square_crop_fallback(v):
-                return v.filter('crop', 'iw', 'iw', '(iw-iw)/2', '(ih-iw)/2')
+            def reels_format_fallback(v):
+                return v.filter('scale', '1080:1920', force_original_aspect_ratio='decrease', 
+                               eval='init').filter('pad', '1080', '1920', '(ow-iw)/2', '(oh-ih)/2', color='#000000')
             
             video = self.apply_protection_layer(
-                video, "Square Crop", square_crop_advanced, square_crop_fallback
+                video, "Reels 9:16", reels_format_advanced, reels_format_fallback
             )
-            protection_layers_applied.append("Square")
+            protection_layers_applied.append("Reels-9:16")
 
             self.update_progress(45, "Applying ML-Mimicking Layer 1: Instagram FGSM Adversarial Perturbations...")
             
@@ -738,7 +739,7 @@ class VideoProcessor:
                 'preset': 'slow',
                 'b:v': '10M',
                 'r': 60,
-                's': '1080x1080',  # Instagram square
+                's': '1080x1920',  # Instagram Reels 9:16
                 'pix_fmt': 'yuv420p'
                 # Note: Metadata injection sometimes causes FFmpeg errors, applied separately if needed
             }
@@ -772,7 +773,7 @@ class VideoProcessor:
                 height = int(video_stream['height'])
                 
                 print(f"✓ Instagram 2025 ML-Mimicking Validation:")
-                print(f"  Resolution: {width}x{height} ({'✓' if width == height == 1080 else '✗'})")
+                print(f"  Resolution: {width}x{height} ({'✓' if width == 1080 and height == 1920 else '✗'})")
                 print(f"  ML-Mimicking Layers: {len(protection_layers_applied)}/4 applied")
                 print(f"  Advanced Audio Protection: ✓")
                 print(f"  Metadata Randomization: ✓")
@@ -789,18 +790,18 @@ class VideoProcessor:
                         ffmpeg
                         .input(input_path)
                         .output(output_path, vcodec='libx264', crf=16, preset='slow', 
-                               **{'b:v': '10M', 's': '1080x1080', 'r': 60, 'pix_fmt': 'yuv420p'})
+                               **{'b:v': '10M', 's': '1080x1920', 'r': 60, 'pix_fmt': 'yuv420p'})
                         .overwrite_output()
                         .run(quiet=False)
                     )
-                    print(f"✓ Instagram Enhanced Fallback: 1080x1080 CRF 16 (protection layers: {len(protection_layers_applied)})")
+                    print(f"✓ Instagram Enhanced Fallback: 1080x1920 CRF 16 (protection layers: {len(protection_layers_applied)})")
                 except Exception as fallback_error:
                     print(f"Enhanced fallback failed: {fallback_error}")
                     # Final basic fallback
                     (
                         ffmpeg
                         .input(input_path)
-                        .output(output_path, vcodec='libx264', crf=18, **{'s': '1080x1080'})
+                        .output(output_path, vcodec='libx264', crf=18, **{'s': '1080x1920'})
                         .overwrite_output()
                         .run(quiet=False)
                     )

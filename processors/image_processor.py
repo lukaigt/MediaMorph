@@ -237,6 +237,26 @@ class ImageProcessor:
         bottom = top + size
         return img.crop((left, top, right, bottom))
     
+    def _crop_to_9_16(self, img):
+        """Crop/resize image to 9:16 aspect ratio (1080x1920 for Instagram Reels)"""
+        width, height = img.size
+        target_ratio = 9 / 16
+        current_ratio = width / height
+        
+        if current_ratio > target_ratio:
+            # Image is too wide, crop width
+            new_width = int(height * target_ratio)
+            left = (width - new_width) // 2
+            img = img.crop((left, 0, left + new_width, height))
+        elif current_ratio < target_ratio:
+            # Image is too tall, crop height
+            new_height = int(width / target_ratio)
+            top = (height - new_height) // 2
+            img = img.crop((0, top, width, top + new_height))
+        
+        # Resize to exact Instagram Reels dimensions
+        return img.resize((1080, 1920), Resampling.LANCZOS)
+    
     def _letterbox_16_9(self, img):
         """Add letterbox padding to make 16:9 aspect ratio"""
         width, height = img.size
@@ -1039,14 +1059,14 @@ class ImageProcessor:
         return Image.fromarray(img_array.astype(np.uint8))
     
     def _apply_instagram_advanced_preset(self, input_path, output_path):
-        """Instagram: Research-based 2025 anti-algorithm system optimized for square format"""
+        """Instagram: Research-based 2025 anti-algorithm system optimized for Reels 9:16 format"""
         try:
             with Image.open(input_path) as img:
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # Crop to square format first
-                img = self._crop_to_square(img)
+                # Convert to 9:16 Reels format first
+                img = self._crop_to_9_16(img)
                 
                 # Get dynamic variation for Instagram
                 variation = self._get_dynamic_variation('instagram')

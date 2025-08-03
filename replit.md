@@ -70,11 +70,18 @@ Preferred communication style: Simple, everyday language.
 - **CUTTING-EDGE 2025 TECHNIQUES IMPLEMENTED**: Complete overhaul based on latest adversarial ML research
 - **Advanced Protection Layers**: TikTok (6 layers), Instagram (4 layers), YouTube (4 layers) with 2025 techniques
 - **Research-Based Features**: Adversarial perturbations, neural traffic disruption, multi-modal evasion, compression-resistant modifications
-- **Platform-Specific 2025 Bypasses**: Content-ID bypass (YouTube), AI evasion (Instagram), content credentials bypass (TikTok)
+- **Platform-Specific 2025 Bypasses**: Content-ID bypass (YouTube), AI evasion (Instagram Reels 9:16), content credentials bypass (TikTok)
 - **Anti-Detection Innovations**: Polymorphic content variations, transfer learning exploits, neural network confusion
 - **Robust Validation System**: Layer-by-layer success/failure logging with comprehensive fallback mechanisms
 - **Metadata Randomization**: Dynamic creation time, encoder signatures, and file structure manipulation
 - **Universal Adversarial Perturbations**: Transferable modifications that work across different detection models
+
+### CRITICAL UPDATE: Instagram Reels Format Change (August 3, 2025)
+- **INSTAGRAM REELS 9:16 FORMAT IMPLEMENTED**: Changed Instagram from square (1:1) to proper Reels format (9:16)
+- **Aspect Ratio Correction**: Instagram now outputs 1080x1920 (vertical) instead of 1080x1080 (square)
+- **Modern Instagram Compatibility**: Properly formatted for Instagram Reels, Stories, and vertical content
+- **All Protection Layers Preserved**: Complete 2025 ML-mimicking system maintained with new format
+- **Video & Image Processing Updated**: Both video and image processors now use 9:16 aspect ratio for Instagram
 
 ### Latest Critical Fixes (August 2, 2025)
 - **ULTRA-HIGH QUALITY 1080P60 IMPLEMENTED**: All platforms now output pristine 1080p 60fps video with maximum bitrates
