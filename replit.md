@@ -86,6 +86,13 @@ Preferred communication style: Simple, everyday language.
 - **Expanded Detection Areas**: 200x70 pixel coverage for text watermarks (vs. old 100x50)
 - **Smart Positioning**: Covers bottom-left (perfect for "Tonybagalaughs"), mid-left, and center positions
 
+### MAJOR UPDATE: YouTube Shorts Support Added (August 3, 2025)
+- **YOUTUBE SHORTS BUTTON IMPLEMENTED**: Added dedicated "YouTube Shorts" button with 9:16 vertical format
+- **Perfect Shorts Format**: Outputs 1080x1920 (vertical) optimized for YouTube Shorts algorithm
+- **Same 4-Layer YouTube Protection**: Content-ID bypass + neural confusion + transfer learning exploits + targeting
+- **Vertical Processing**: Both video and image processors support YouTube Shorts 9:16 format
+- **Platform-Specific Optimization**: Uses YouTube detection parameters but optimized for Shorts vertical content
+
 ### CRITICAL UPDATE: Instagram Reels Format Change (August 3, 2025)
 - **INSTAGRAM REELS 9:16 FORMAT IMPLEMENTED**: Changed Instagram from square (1:1) to proper Reels format (9:16)
 - **Aspect Ratio Correction**: Instagram now outputs 1080x1920 (vertical) instead of 1080x1080 (square)

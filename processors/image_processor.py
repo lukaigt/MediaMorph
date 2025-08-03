@@ -25,6 +25,8 @@ class ImageProcessor:
             return self._apply_instagram_advanced_preset(input_path, output_path)
         elif platform == 'youtube':
             return self._apply_youtube_advanced_preset(input_path, output_path)
+        elif platform == 'youtube_shorts':
+            return self._apply_youtube_shorts_preset(input_path, output_path)
         else:
             raise ValueError(f"Unknown platform: {platform}")
     
@@ -166,6 +168,54 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error in YouTube image preset: {e}")
     
+    def _apply_youtube_shorts_preset(self, input_path, output_path):
+        """YouTube Shorts: Advanced vertical processing with YouTube-specific algorithm evasion (9:16 format)"""
+        try:
+            with Image.open(input_path) as img:
+                # Convert to RGB if necessary
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # 9:16 vertical format for YouTube Shorts
+                img = self._crop_to_vertical_9_16(img)
+                
+                # Heavy color and enhancement adjustments (same as YouTube but optimized for Shorts)
+                enhancer = ImageEnhance.Color(img)
+                img = enhancer.enhance(1.38)
+                
+                enhancer = ImageEnhance.Sharpness(img)
+                img = enhancer.enhance(1.22)
+                
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(1.08)
+                
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(1.02)
+                
+                # Algorithm evasion noise (same intensity as YouTube)
+                img = self._add_noise(img, intensity=18)
+                
+                # Advanced YouTube Shorts-specific evasion (same techniques as YouTube)
+                img = self._apply_steganographic_evasion(img, intensity=16)
+                img = self._apply_perceptual_hash_evasion(img)
+                img = self._apply_dct_domain_modifications(img)
+                
+                # Color channel manipulation (same as YouTube)
+                img = self._adjust_color_channels(img, r_adjust=0.99, g_adjust=1.02, b_adjust=0.98)
+                
+                # Tiny rotation for pixel position changes
+                img = img.rotate(0.2, expand=False, fillcolor=(1, 1, 1))
+                
+                # Scale manipulation
+                width, height = img.size
+                img = img.resize((int(width * 1.001), int(height * 1.001)), Resampling.LANCZOS)
+                img = img.resize((width, height), Resampling.LANCZOS)
+                
+                img.save(output_path, 'JPEG', quality=91, optimize=True)
+                return output_path
+        except Exception as e:
+            raise Exception(f"Error in YouTube Shorts image preset: {e}")
+    
     def apply_custom_commands(self, input_path, commands):
         """Apply custom commands to image"""
         output_path = os.path.join(self.temp_dir, f"custom_{Path(input_path).stem}.jpg")
@@ -271,6 +321,27 @@ class ImageProcessor:
             new_img.paste(img, (0, paste_y))
         else:
             # Image is taller than 16:9, add horizontal padding
+            new_width = int(height * target_ratio)
+            new_img = Image.new('RGB', (new_width, height), color='black')
+            paste_x = (new_width - width) // 2
+            new_img.paste(img, (paste_x, 0))
+        
+        return new_img
+    
+    def _crop_to_vertical_9_16(self, img):
+        """Crop/pad image to vertical 9:16 aspect ratio for YouTube Shorts"""
+        width, height = img.size
+        target_ratio = 9 / 16  # vertical aspect ratio
+        current_ratio = width / height
+        
+        if current_ratio > target_ratio:
+            # Image is wider than 9:16, add vertical padding
+            new_height = int(width / target_ratio)
+            new_img = Image.new('RGB', (width, new_height), color='black')
+            paste_y = (new_height - height) // 2
+            new_img.paste(img, (0, paste_y))
+        else:
+            # Image is taller than 9:16, add horizontal padding
             new_width = int(height * target_ratio)
             new_img = Image.new('RGB', (new_width, height), color='black')
             paste_x = (new_width - width) // 2

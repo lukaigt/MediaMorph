@@ -171,7 +171,7 @@ def main():
         else:
             st.markdown("**Choose your target platform for MAXIMUM protection that algorithms can't detect:**")
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             if st.button("📱 TikTok Anti-Algorithm", use_container_width=True, type="primary", 
@@ -236,23 +236,49 @@ def main():
                         'preview_enabled': preview_enabled
                     })
         
+        with col4:
+            if st.button("🩳 YouTube Shorts", use_container_width=True, type="primary",
+                        disabled=st.session_state.processing):
+                st.session_state.current_platform = 'youtube_shorts'
+                if st.session_state.batch_mode and len(uploaded_files) > 1:
+                    process_batch_files(uploaded_files, 'youtube_shorts', processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
+                else:
+                    process_media_preset(uploaded_file, 'youtube_shorts', file_details, processors, {
+                        'audio_quality': st.session_state.audio_quality,
+                        'size_limit': size_limit,
+                        'auto_crop': auto_crop,
+                        'watermark_removal': watermark_removal,
+                        'preview_enabled': preview_enabled
+                    })
+        
         # Show what each preset does
         with st.expander("🔧 What Each Preset Does", expanded=False):
             st.markdown("""
-            **TikTok Anti-Algorithm:**
-            - Horizontal flip + 15% speed boost + zoom + strong noise
-            - Color channel manipulation + pixel position changes
-            - Heavy brightness/contrast/saturation adjustments
+            **TikTok Anti-Algorithm (9:16 Vertical):**
+            - 6-Layer Protection: Adversarial perturbations + neural traffic disruption
+            - Multi-modal evasion + compression resistance + universal perturbations
+            - Horizontal flip + speed boost + zoom + strong noise + metadata manipulation
             
-            **Instagram Anti-Algorithm:**
-            - Square crop + vibrant color boost + film grain
-            - Hue shifts + sharpness enhancement + noise layers
-            - Multiple scale manipulations to change file hash
+            **Instagram Anti-Algorithm (9:16 Reels):**
+            - 4-Layer Protection: AI evasion + polymorphic variations
+            - Reels format + vibrant color boost + film grain
+            - Hue shifts + sharpness enhancement + multi-modal detection bypass
             
-            **YouTube Anti-Algorithm:**
-            - 16:9 letterbox + extreme saturation boost
-            - Strong sharpening + color balance shifts
-            - Curve adjustments + temporal noise patterns
+            **YouTube Anti-Algorithm (16:9 Landscape):**
+            - 4-Layer Protection: Content-ID bypass + neural network confusion
+            - 16:9 letterbox + extreme saturation boost + transfer learning exploits
+            - Strong sharpening + color balance shifts + curve adjustments
+            
+            **YouTube Shorts (9:16 Vertical):**
+            - Same 4-Layer YouTube Protection in vertical format
+            - Content-ID bypass + neural confusion optimized for Shorts
+            - 9:16 aspect ratio perfect for YouTube Shorts algorithm
             """)
         
         # Custom commands section
