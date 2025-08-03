@@ -25,17 +25,18 @@ Preferred communication style: Simple, everyday language.
 - **File Management**: `FileUtils` class for file type detection and metadata extraction
 
 ### Processing Pipeline
-- **8-Layer Anti-Algorithm Framework**: Research-based 2025 system implementing multiple evasion techniques per upload
-  - Layer 1: FGS-Audio inspired adversarial perturbations with content-adaptive gradients
-  - Layer 2: Reversible steganography with texture-aware LSB modifications
-  - Layer 3: Hybrid DCT+GAN frequency domain manipulation in 8x8 JPEG blocks
-  - Layer 4: Triple-stage processing (psycho-visual, YUV transform, error correction)
-  - Layer 5: Platform-specific targeting (TikTok/Instagram/YouTube algorithm optimization)
-  - Layer 6: Metadata & file structure manipulation (EXIF stripping, fake camera data, file hash randomization)
-  - Layer 7: Format conversion chains (multi-stage file transformations to break additional fingerprinting)
-  - Layer 8: Batch processing protection (session pattern prevention across multiple uploads)
-- **Dynamic Variation System**: Time-based and randomized parameter selection to prevent pattern detection
-- **Advanced Audio Processing**: Triple-stage audio manipulation with sample rate shifts, EQ filtering, and volume micro-adjustments
+- **2025 Research-Based Anti-Algorithm Framework**: Cutting-edge system implementing latest adversarial ML techniques
+  - **TikTok (6 Layers)**: Adversarial Perturbations → Neural Traffic Disruption → Multi-Modal Evasion → Compression Resistance → Universal Perturbations → Real-Time Bypass + Metadata Manipulation
+  - **Instagram (4 Layers)**: Square Crop → AI Evasion (Watermark Bypass) → Polymorphic Variations → Multi-Modal Detection Bypass
+  - **YouTube (4 Layers)**: 16:9 Aspect → Content-ID Bypass → Neural Network Confusion → Transfer Learning Exploits
+- **Advanced 2025 Techniques**: Based on latest research papers and platform-specific AI circumvention methods
+  - Robust adversarial attacks designed to survive compression
+  - Polymorphic content variations ensuring never-identical processing
+  - Neural network confusion methods targeting deep learning classifiers
+  - Transfer learning exploits that work across different detection models
+  - Real-time detection bypass for live-streaming systems
+- **Robust Validation System**: Layer-by-layer success/failure logging with fallback mechanisms
+- **Metadata Randomization**: Dynamic creation timestamps, encoder signatures, and file structure manipulation
 - **Custom Command System**: 47+ implemented image effects with full processing logic for manual control
 
 ### File Handling
@@ -64,6 +65,16 @@ Preferred communication style: Simple, everyday language.
 - **Research Implementation**: 2025 academic techniques for adversarial perturbations and steganography
 
 ## Recent Major Updates (August 2025)
+
+### REVOLUTIONARY 2025 RESEARCH-BASED PROTECTION SYSTEM (August 3, 2025)
+- **CUTTING-EDGE 2025 TECHNIQUES IMPLEMENTED**: Complete overhaul based on latest adversarial ML research
+- **Advanced Protection Layers**: TikTok (6 layers), Instagram (4 layers), YouTube (4 layers) with 2025 techniques
+- **Research-Based Features**: Adversarial perturbations, neural traffic disruption, multi-modal evasion, compression-resistant modifications
+- **Platform-Specific 2025 Bypasses**: Content-ID bypass (YouTube), AI evasion (Instagram), content credentials bypass (TikTok)
+- **Anti-Detection Innovations**: Polymorphic content variations, transfer learning exploits, neural network confusion
+- **Robust Validation System**: Layer-by-layer success/failure logging with comprehensive fallback mechanisms
+- **Metadata Randomization**: Dynamic creation time, encoder signatures, and file structure manipulation
+- **Universal Adversarial Perturbations**: Transferable modifications that work across different detection models
 
 ### Latest Critical Fixes (August 2, 2025)
 - **ULTRA-HIGH QUALITY 1080P60 IMPLEMENTED**: All platforms now output pristine 1080p 60fps video with maximum bitrates
