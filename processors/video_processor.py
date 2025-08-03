@@ -35,13 +35,18 @@ class VideoProcessor:
             self.progress_callback(percentage, text)
     
     def _monitor_encoding_progress(self, process, duration, start_percent, end_percent):
-        """Monitor FFmpeg encoding progress in real-time"""
+        """Enhanced real-time progress monitoring with accurate ETA calculation"""
         import re
         import time
         
-        print(f"🎬 Starting real-time progress monitoring ({start_percent}% → {end_percent}%)")
+        print(f"🎬 Starting enhanced progress monitoring ({start_percent}% → {end_percent}%)")
         
+        # Initialize tracking variables
         current_time = 0
+        process_start_time = time.time()
+        last_update_time = process_start_time
+        progress_samples = []  # Track progress over time for better ETA
+        
         while True:
             output = process.stderr.readline()
             if output == b'' and process.poll() is not None:
@@ -58,41 +63,89 @@ class VideoProcessor:
                     seconds = float(time_match.group(3))
                     current_time = hours * 3600 + minutes * 60 + seconds
                     
+                    current_wall_time = time.time()
+                    
                     # Calculate progress percentage
                     if duration > 0:
                         encoding_progress = (current_time / duration) * 100
-                        # Map to our progress range
+                        # Smooth mapping to our progress range
                         total_progress = start_percent + (encoding_progress / 100) * (end_percent - start_percent)
                         total_progress = min(total_progress, end_percent)
                         
-                        # Extract current fps for detailed status
+                        # Track progress samples for accurate ETA
+                        progress_samples.append({
+                            'time': current_wall_time,
+                            'encoded_seconds': current_time,
+                            'progress_percent': total_progress
+                        })
+                        
+                        # Keep only recent samples (last 10 seconds)
+                        progress_samples = [s for s in progress_samples if current_wall_time - s['time'] <= 10]
+                        
+                        # Extract current fps for status
                         fps_match = re.search(r'fps=\s*([0-9.]+)', line)
-                        fps = fps_match.group(1) if fps_match else "0"
+                        fps = float(fps_match.group(1)) if fps_match else 0.0
                         
-                        # Calculate estimated time remaining
-                        if current_time > 0:
-                            progress_rate = current_time / duration
-                            remaining_duration = duration - current_time
-                            eta_seconds = remaining_duration / max(0.1, float(fps)) * 1.2  # Conservative estimate
-                            eta_minutes = eta_seconds / 60
+                        # Calculate realistic ETA based on actual processing speed
+                        if len(progress_samples) >= 2 and current_time > 0:
+                            # Calculate average encoding speed over recent samples
+                            oldest_sample = progress_samples[0]
+                            newest_sample = progress_samples[-1]
                             
-                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps) - ETA: {eta_minutes:.1f}m"
+                            wall_time_diff = newest_sample['time'] - oldest_sample['time']
+                            encoded_time_diff = newest_sample['encoded_seconds'] - oldest_sample['encoded_seconds']
+                            
+                            if wall_time_diff > 0 and encoded_time_diff > 0:
+                                # Encoding speed: how many video seconds per wall clock second
+                                encoding_speed = encoded_time_diff / wall_time_diff
+                                remaining_video_seconds = duration - current_time
+                                
+                                if encoding_speed > 0:
+                                    eta_wall_seconds = remaining_video_seconds / encoding_speed
+                                    eta_minutes = eta_wall_seconds / 60
+                                    
+                                    # Format ETA nicely
+                                    if eta_minutes < 1:
+                                        eta_str = f"{eta_wall_seconds:.0f}s"
+                                    elif eta_minutes < 60:
+                                        eta_str = f"{eta_minutes:.1f}m"
+                                    else:
+                                        eta_hours = eta_minutes / 60
+                                        eta_str = f"{eta_hours:.1f}h"
+                                    
+                                    status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps:.1f} fps) - ETA: {eta_str}"
+                                else:
+                                    status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps:.1f} fps) - Calculating ETA..."
+                            else:
+                                status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps:.1f} fps) - Starting..."
                         else:
-                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps)"
+                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps:.1f} fps) - Initializing..."
                         
-                        self.update_progress(int(total_progress), status_text)
-                        print(f"Progress: {int(total_progress)}% - {status_text}")
-                        
-                        # Small delay to prevent too frequent updates
-                        time.sleep(0.2)
+                        # Update progress only if enough time has passed (smooth updates)
+                        if current_wall_time - last_update_time >= 0.5:  # Update every 0.5 seconds
+                            self.update_progress(int(total_progress), status_text)
+                            print(f"Progress: {int(total_progress)}% - {status_text}")
+                            last_update_time = current_wall_time
         
         # Wait for process to complete
         process.wait()
         if process.returncode != 0:
             raise Exception(f"FFmpeg encoding failed with code {process.returncode}")
             
+        # Final progress update
+        self.update_progress(end_percent, f"Encoding completed successfully!")
         print(f"✅ Encoding completed successfully!")
-        self._encoding_start_time = time.time()  # Reset for next encoding
+        
+    def _smooth_progress_transition(self, from_percent, to_percent, steps=10, delay=0.1):
+        """Create smooth progress transitions between major steps"""
+        if not hasattr(self, 'progress_callback') or not self.progress_callback:
+            return
+            
+        step_size = (to_percent - from_percent) / steps
+        for i in range(steps + 1):
+            current_progress = from_percent + (step_size * i)
+            self.update_progress(int(current_progress), f"Processing step {i+1}/{steps+1}...")
+            time.sleep(delay)
     
     def _init_adversarial_params(self):
         """Initialize FGSM-inspired adversarial parameters"""
@@ -156,12 +209,12 @@ class VideoProcessor:
         """Apply platform-specific preset to video with advanced ML-mimicking protection"""
         output_path = os.path.join(self.temp_dir, f"processed_{platform}_{Path(input_path).stem}.mp4")
         
-        self.update_progress(10, f"Initializing 2025 ML-Mimicking System for {platform.upper()}...")
+        self.update_progress(50, f"Initializing 2025 ML-Mimicking System for {platform.upper()}...")
         
         # Apply advanced audio protection first
         audio_protected_path = self._apply_advanced_audio_protection(input_path, platform)
         
-        self.update_progress(25, f"Starting {platform.upper()} ML-mimicking layers...")
+        self.update_progress(65, f"Starting {platform.upper()} ML-mimicking layers...")
         
         if platform == 'tiktok':
             result = self._apply_tiktok_2025_system(audio_protected_path, output_path)
@@ -176,7 +229,7 @@ class VideoProcessor:
         if audio_protected_path != input_path and os.path.exists(audio_protected_path):
             os.remove(audio_protected_path)
         
-        self.update_progress(100, f"{platform.upper()} ML-Mimicking Protection Complete!")
+        self.update_progress(98, f"{platform.upper()} ML-Mimicking Protection Complete!")
         return result
     
     def _apply_advanced_audio_protection(self, input_path, platform):

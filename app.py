@@ -436,6 +436,23 @@ def update_progress(percentage, text):
     # Update progress text if it exists
     if st.session_state.progress_text_element is not None:
         st.session_state.progress_text_element.text(f"🔄 {text} ({percentage}%)")
+
+def _smooth_progress_transition(from_percent, to_percent, steps=10, delay=0.1):
+    """Create smooth progress transitions between major steps"""
+    import time
+    
+    if from_percent >= to_percent:
+        return
+        
+    step_size = (to_percent - from_percent) / steps
+    for i in range(steps + 1):
+        current_progress = from_percent + (step_size * i)
+        step_text = f"Processing step {i+1}/{steps+1}..."
+        if i == steps:
+            step_text = f"Step completed!"
+        
+        update_progress(int(current_progress), step_text)
+        time.sleep(delay)
     
 def process_media_preset(uploaded_file, platform, file_details, processors, options=None):
     """Enhanced function to process media with platform preset and advanced features"""
@@ -507,9 +524,16 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
                 processor.set_audio_quality(options.get('audio_quality', '192k'))
             if hasattr(processor, 'set_progress_callback'):
                 processor.set_progress_callback(update_progress)
+            
+            # Smooth progress transition to encoding phase
+            _smooth_progress_transition(40, 50, 5, 0.2)
+            
             output_path = processor.apply_preset(temp_input_path, platform)
         else:
+            # For images, use simpler progress tracking
+            _smooth_progress_transition(40, 85, 8, 0.15)
             output_path = processor.apply_preset(temp_input_path, platform)
+            _smooth_progress_transition(85, 95, 3, 0.1)
         
         update_progress(70, "Optimizing file size...")
         
@@ -837,89 +861,277 @@ def auto_crop_video(input_path):
         return input_path
 
 def remove_watermarks(input_path, media_type):
-    """Attempt to remove watermarks using blur and inpainting techniques"""
+    """Intelligent watermark removal using advanced detection and inpainting"""
     try:
         if media_type == 'video':
-            return remove_video_watermarks(input_path)
+            return remove_video_watermarks_intelligent(input_path)
         else:
-            return remove_image_watermarks(input_path)
+            return remove_image_watermarks_intelligent(input_path)
     except Exception as e:
         st.warning(f"⚠️ Watermark removal failed, using original: {str(e)}")
         return input_path
 
-def remove_video_watermarks(input_path):
-    """Enhanced watermark removal with intelligent text detection and positioning"""
+def detect_watermark_regions(image_path):
+    """Detect potential watermark regions using computer vision"""
     try:
-        import ffmpeg
-        output_path = input_path.replace('.mp4', '_nowatermark.mp4')
+        try:
+            import cv2
+        except ImportError:
+            print("OpenCV not available, using fallback detection")
+            return []
+        import numpy as np
         
-        # Ultra-simple watermark removal using basic FFmpeg command
-        # This approach is much more reliable than complex filters
+        # Read image
+        img = cv2.imread(image_path)
+        if img is None:
+            return []
+            
+        height, width = img.shape[:2]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Multiple detection strategies
+        watermark_regions = []
+        
+        # Strategy 1: Edge-based detection for logos/text
+        edges = cv2.Canny(gray, 50, 150)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            # Filter for potential watermarks (reasonable size, edge locations)
+            if (20 < w < width//3 and 20 < h < height//3 and 
+                (x < width//4 or x > 3*width//4 or y < height//4 or y > 3*height//4)):
+                watermark_regions.append((x, y, w, h))
+        
+        # Strategy 2: Common watermark positions
+        common_positions = [
+            # Bottom-left (for usernames like "Tonybagalaughs")
+            (10, height-80, 250, 70),
+            # Bottom-right
+            (width-260, height-80, 250, 70),
+            # Top-left
+            (10, 10, 200, 60),
+            # Top-right  
+            (width-210, 10, 200, 60),
+            # Center-left
+            (10, height//2-35, 200, 70),
+            # Center-right
+            (width-210, height//2-35, 200, 70),
+            # Bottom-center
+            (width//2-125, height-80, 250, 70)
+        ]
+        
+        # Ensure positions are within image bounds
+        for x, y, w, h in common_positions:
+            x = max(0, min(x, width-1))
+            y = max(0, min(y, height-1))
+            w = min(w, width-x)
+            h = min(h, height-y)
+            if w > 10 and h > 10:
+                watermark_regions.append((x, y, w, h))
+        
+        return watermark_regions
+        
+    except Exception as e:
+        print(f"Watermark detection failed: {e}")
+        return []
+
+def remove_video_watermarks_intelligent(input_path):
+    """Intelligent video watermark removal with dynamic detection"""
+    try:
+        try:
+            import cv2
+        except ImportError:
+            print("OpenCV not available, using fallback method")
+            return remove_video_watermarks_fallback(input_path)
         import subprocess
         
+        # First, extract a frame to analyze watermark positions
+        temp_frame = input_path.replace('.mp4', '_frame.jpg')
+        
+        # Extract middle frame for analysis
+        cmd_extract = [
+            'ffmpeg', '-i', input_path,
+            '-vf', 'select=eq(n\\,30)',
+            '-vframes', '1',
+            '-y', temp_frame
+        ]
+        
+        subprocess.run(cmd_extract, capture_output=True)
+        
+        if os.path.exists(temp_frame):
+            # Detect watermark regions
+            regions = detect_watermark_regions(temp_frame)
+            os.unlink(temp_frame)
+            
+            if regions:
+                # Build delogo filter chain
+                delogo_filters = []
+                for i, (x, y, w, h) in enumerate(regions[:6]):  # Limit to 6 regions
+                    delogo_filters.append(f"delogo=x={x}:y={y}:w={w}:h={h}")
+                
+                filter_chain = ",".join(delogo_filters)
+                
+                output_path = input_path.replace('.mp4', '_nowatermark.mp4')
+                
+                # Apply intelligent watermark removal
+                cmd = [
+                    'ffmpeg', '-i', input_path,
+                    '-vf', filter_chain,
+                    '-c:a', 'copy',
+                    '-crf', '18',
+                    '-preset', 'medium',
+                    '-y', output_path
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                if result.returncode == 0 and os.path.exists(output_path):
+                    os.unlink(input_path)
+                    print(f"✓ Intelligent watermark removal applied to {len(regions)} regions")
+                    return output_path
+                else:
+                    print(f"Delogo failed: {result.stderr}")
+        
+        # Fallback: Use proven blur-based approach for common positions
+        return remove_video_watermarks_fallback(input_path)
+        
+    except Exception as e:
+        print(f"Intelligent watermark removal failed: {e}")
+        return remove_video_watermarks_fallback(input_path)
+
+def remove_video_watermarks_fallback(input_path):
+    """Fallback watermark removal using blur for common positions"""
+    try:
+        import subprocess
+        
+        output_path = input_path.replace('.mp4', '_nowatermark.mp4')
+        
+        # Use blur instead of delogo for more reliable results
+        # Target common watermark positions with blur
         cmd = [
             'ffmpeg', '-i', input_path,
-            '-vf', 'delogo=x=15:y=h-85:w=180:h=65,delogo=x=15:y=15:w=100:h=50',
+            '-vf', ('boxblur=15:1:enable=\'between(t,0,999999)\':x=10:y=main_h-80:w=250:h=70,'
+                   'boxblur=10:1:enable=\'between(t,0,999999)\':x=main_w-260:y=main_h-80:w=250:h=70,'
+                   'boxblur=8:1:enable=\'between(t,0,999999)\':x=10:y=10:w=200:h=60'),
             '-c:a', 'copy',
-            '-crf', '20',
+            '-crf', '18',
             '-preset', 'fast',
             '-y', output_path
         ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"FFmpeg watermark removal failed: {result.stderr}")
-            # If FFmpeg fails, just return original
+        
+        if result.returncode == 0 and os.path.exists(output_path):
+            os.unlink(input_path)
+            print("✓ Fallback watermark removal applied")
+            return output_path
+        else:
+            print(f"Fallback watermark removal failed: {result.stderr}")
             return input_path
+            
+    except Exception as e:
+        print(f"Fallback watermark removal failed: {e}")
+        return input_path
+
+def remove_image_watermarks_intelligent(input_path):
+    """Intelligent image watermark removal using inpainting and detection"""
+    try:
+        try:
+            import cv2
+        except ImportError:
+            print("OpenCV not available, using fallback method")
+            return remove_image_watermarks_fallback(input_path)
+        import numpy as np
+        from PIL import Image
+        
+        # Detect watermark regions
+        regions = detect_watermark_regions(input_path)
+        
+        if not regions:
+            # Fallback to corner-based removal
+            return remove_image_watermarks_fallback(input_path)
+        
+        # Load image with OpenCV for advanced processing
+        img = cv2.imread(input_path)
+        if img is None:
+            return input_path
+            
+        # Create mask for inpainting
+        mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        
+        # Mark watermark regions in mask
+        for x, y, w, h in regions:
+            cv2.rectangle(mask, (x, y), (x+w, y+h), 255, -1)
+        
+        # Apply inpainting to remove watermarks
+        result = cv2.inpaint(img, mask, 3, cv2.INPAINT_TELEA)
+        
+        # Convert back to PIL and save
+        result_rgb = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(result_rgb)
+        
+        output_path = input_path.replace(input_path.split('.')[-1], f'nowatermark.{input_path.split(".")[-1]}')
+        pil_image.save(output_path, quality=95)
         
         os.unlink(input_path)
+        print(f"✓ Intelligent image watermark removal applied to {len(regions)} regions")
         return output_path
         
     except Exception as e:
-        print(f"Watermark removal failed: {e}")
-        # Return original if removal fails
-        return input_path
+        print(f"Intelligent image watermark removal failed: {e}")
+        return remove_image_watermarks_fallback(input_path)
 
-def remove_image_watermarks(input_path):
-    """Remove watermarks from images using simple blur techniques"""
+def remove_image_watermarks_fallback(input_path):
+    """Fallback image watermark removal using targeted blur"""
     try:
         from PIL import Image, ImageFilter
+        import numpy as np
         
         image = Image.open(input_path)
         width, height = image.size
         
-        # Create a copy for processing
+        # Convert to numpy for advanced processing
+        img_array = np.array(image)
+        
+        # Define watermark regions based on common positions
+        regions = [
+            # Bottom-left (perfect for usernames)
+            (10, height-80, 250, 70),
+            # Bottom-right  
+            (width-260, height-80, 250, 70),
+            # Top corners
+            (10, 10, 200, 60),
+            (width-210, 10, 200, 60),
+            # Center positions
+            (10, height//2-35, 200, 70),
+            (width-210, height//2-35, 200, 70)
+        ]
+        
         processed_image = image.copy()
         
-        # Apply gentle blur to corner areas where watermarks typically appear
-        corner_size = min(width, height) // 8
-        
-        # Top-left corner
-        corner = image.crop((0, 0, corner_size, corner_size))
-        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
-        processed_image.paste(blurred_corner, (0, 0))
-        
-        # Top-right corner
-        corner = image.crop((width-corner_size, 0, width, corner_size))
-        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
-        processed_image.paste(blurred_corner, (width-corner_size, 0))
-        
-        # Bottom corners
-        corner = image.crop((0, height-corner_size, corner_size, height))
-        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
-        processed_image.paste(blurred_corner, (0, height-corner_size))
-        
-        corner = image.crop((width-corner_size, height-corner_size, width, height))
-        blurred_corner = corner.filter(ImageFilter.GaussianBlur(radius=2))
-        processed_image.paste(blurred_corner, (width-corner_size, height-corner_size))
+        for x, y, w, h in regions:
+            # Ensure coordinates are within bounds
+            x = max(0, min(x, width-1))
+            y = max(0, min(y, height-1))
+            w = min(w, width-x)
+            h = min(h, height-y)
+            
+            if w > 10 and h > 10:
+                # Extract region and apply smart blur
+                region = image.crop((x, y, x+w, y+h))
+                blurred_region = region.filter(ImageFilter.GaussianBlur(radius=3))
+                processed_image.paste(blurred_region, (x, y))
         
         output_path = input_path.replace(input_path.split('.')[-1], f'nowatermark.{input_path.split(".")[-1]}')
         processed_image.save(output_path, quality=95)
         
         os.unlink(input_path)
+        print("✓ Fallback image watermark removal applied")
         return output_path
         
     except Exception as e:
+        print(f"Fallback image watermark removal failed: {e}")
         return input_path
 
 def optimize_file_size(input_path, size_limit_str, media_type):
