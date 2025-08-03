@@ -1007,13 +1007,10 @@ def remove_video_watermarks_fallback(input_path):
         
         output_path = input_path.replace('.mp4', '_nowatermark.mp4')
         
-        # Use blur instead of delogo for more reliable results
-        # Target common watermark positions with blur
+        # Use correct delogo syntax for reliable watermark removal
         cmd = [
             'ffmpeg', '-i', input_path,
-            '-vf', ('boxblur=15:1:enable=\'between(t,0,999999)\':x=10:y=main_h-80:w=250:h=70,'
-                   'boxblur=10:1:enable=\'between(t,0,999999)\':x=main_w-260:y=main_h-80:w=250:h=70,'
-                   'boxblur=8:1:enable=\'between(t,0,999999)\':x=10:y=10:w=200:h=60'),
+            '-vf', 'delogo=x=10:y=h-80:w=250:h=70,delogo=x=w-260:y=h-80:w=250:h=70,delogo=x=10:y=10:w=200:h=60',
             '-c:a', 'copy',
             '-crf', '18',
             '-preset', 'fast',
