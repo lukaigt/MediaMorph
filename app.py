@@ -132,12 +132,23 @@ def main():
         # Progress tracking display
         if st.session_state.processing:
             st.header("🔄 Processing Progress")
-            progress_bar = st.progress(st.session_state.progress / 100)
-            st.write(f"**{st.session_state.progress}%** - {st.session_state.progress_text}")
             
-            # Auto-refresh while processing
+            # Create columns for better progress display
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                progress_bar = st.progress(st.session_state.progress / 100)
+                st.write(f"**{st.session_state.progress}%** - {st.session_state.progress_text}")
+            with col2:
+                if st.session_state.progress >= 85 and st.session_state.progress < 98:
+                    st.write("📊 **Live Encoding**")
+                    st.write("⏱️ Real-time progress")
+            
+            # Auto-refresh while processing with faster updates during encoding
             if st.session_state.progress < 100:
-                time.sleep(0.5)
+                if st.session_state.progress >= 85 and st.session_state.progress < 98:
+                    time.sleep(0.3)  # Faster updates during encoding
+                else:
+                    time.sleep(0.5)  # Normal updates
                 st.rerun()
         
         # Platform preset buttons
@@ -842,35 +853,31 @@ def remove_video_watermarks(input_path):
         import ffmpeg
         output_path = input_path.replace('.mp4', '_nowatermark.mp4')
         
-        # Enhanced watermark removal targeting multiple positions and sizes
-        # Covers common text watermarks like "Tonybagalaughs" style usernames
-        (
-            ffmpeg
-            .input(input_path)
-            # Top-left corner (standard size)
-            .filter('delogo', x=10, y=10, w=120, h=60)
-            # Top-right corner (standard size) 
-            .filter('delogo', x='W-130', y=10, w=120, h=60)
-            # Bottom-left corner (expanded for text like "Tonybagalaughs")
-            .filter('delogo', x=10, y='H-80', w=200, h=70)
-            # Bottom-right corner (expanded size)
-            .filter('delogo', x='W-210', y='H-80', w=200, h=70)
-            # Center-left (for usernames positioned mid-left)
-            .filter('delogo', x=10, y='H/2-30', w=180, h=60)
-            # Center-right (for usernames positioned mid-right)
-            .filter('delogo', x='W-190', y='H/2-30', w=180, h=60)
-            # Lower center area (for centered watermarks)
-            .filter('delogo', x='W/2-100', y='H-100', w=200, h=80)
-            .output(output_path, vcodec='libx264', acodec='copy', crf=18)
-            .overwrite_output()
-            .run(quiet=True)
-        )
+        # Ultra-simple watermark removal using basic FFmpeg command
+        # This approach is much more reliable than complex filters
+        import subprocess
+        
+        cmd = [
+            'ffmpeg', '-i', input_path,
+            '-vf', 'delogo=x=15:y=h-85:w=180:h=65,delogo=x=15:y=15:w=100:h=50',
+            '-c:a', 'copy',
+            '-crf', '20',
+            '-preset', 'fast',
+            '-y', output_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"FFmpeg watermark removal failed: {result.stderr}")
+            # If FFmpeg fails, just return original
+            return input_path
         
         os.unlink(input_path)
         return output_path
         
     except Exception as e:
-        print(f"Enhanced watermark removal failed: {e}")
+        print(f"Watermark removal failed: {e}")
+        # Return original if removal fails
         return input_path
 
 def remove_image_watermarks(input_path):

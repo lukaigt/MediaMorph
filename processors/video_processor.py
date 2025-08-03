@@ -71,18 +71,20 @@ class VideoProcessor:
                         
                         # Calculate estimated time remaining
                         if current_time > 0:
-                            rate = current_time / max(1, time.time() - getattr(self, '_encoding_start_time', time.time()))
-                            remaining_seconds = max(0, duration - current_time)
-                            eta_minutes = remaining_seconds / max(rate, 0.1) / 60
+                            progress_rate = current_time / duration
+                            remaining_duration = duration - current_time
+                            eta_seconds = remaining_duration / max(0.1, float(fps)) * 1.2  # Conservative estimate
+                            eta_minutes = eta_seconds / 60
                             
                             status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps) - ETA: {eta_minutes:.1f}m"
                         else:
                             status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s ({fps} fps)"
                         
                         self.update_progress(int(total_progress), status_text)
+                        print(f"Progress: {int(total_progress)}% - {status_text}")
                         
                         # Small delay to prevent too frequent updates
-                        time.sleep(0.1)
+                        time.sleep(0.2)
         
         # Wait for process to complete
         process.wait()
