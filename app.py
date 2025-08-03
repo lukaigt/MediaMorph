@@ -1007,15 +1007,55 @@ def remove_video_watermarks_fallback(input_path):
         
         output_path = input_path.replace('.mp4', '_nowatermark.mp4')
         
-        # Use correct delogo syntax for reliable watermark removal
-        cmd = [
-            'ffmpeg', '-i', input_path,
-            '-vf', 'delogo=x=10:y=h-80:w=250:h=70,delogo=x=w-260:y=h-80:w=250:h=70,delogo=x=10:y=10:w=200:h=60',
-            '-c:a', 'copy',
-            '-crf', '18',
-            '-preset', 'fast',
-            '-y', output_path
-        ]
+        # Get video dimensions first for dynamic watermark removal
+        probe_result = subprocess.run(['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_streams', input_path], 
+                                    capture_output=True, text=True)
+        if probe_result.returncode == 0:
+            import json
+            probe_data = json.loads(probe_result.stdout)
+            video_stream = next((s for s in probe_data['streams'] if s['codec_type'] == 'video'), None)
+            if video_stream:
+                width = int(video_stream['width'])
+                height = int(video_stream['height'])
+                
+                # Calculate dynamic watermark positions based on video dimensions
+                # Bottom-left (for "Tonybagalaughs" style watermarks)
+                bl_x = int(width * 0.02)  # 2% from left
+                bl_y = int(height * 0.85)  # 85% from top (bottom area)
+                bl_w = int(width * 0.25)   # 25% of width
+                bl_h = int(height * 0.08)  # 8% of height
+                
+                # Use blur filter instead of delogo for better compatibility
+                watermark_filter = f'boxblur=enable=\'between(y,{bl_y},{bl_y + bl_h})*between(x,{bl_x},{bl_x + bl_w})\':luma_radius=20:luma_power=3'
+                
+                cmd = [
+                    'ffmpeg', '-i', input_path,
+                    '-vf', watermark_filter,
+                    '-c:a', 'copy',
+                    '-crf', '18',
+                    '-preset', 'fast',
+                    '-y', output_path
+                ]
+            else:
+                # Fallback if video stream not found
+                cmd = [
+                    'ffmpeg', '-i', input_path,
+                    '-vf', 'boxblur=20:3',  # Simple blur fallback
+                    '-c:a', 'copy',
+                    '-crf', '18',
+                    '-preset', 'fast',
+                    '-y', output_path
+                ]
+        else:
+            # Fallback if ffprobe fails
+            cmd = [
+                'ffmpeg', '-i', input_path,
+                '-vf', 'boxblur=20:3',  # Simple blur fallback
+                '-c:a', 'copy',
+                '-crf', '18',
+                '-preset', 'fast',
+                '-y', output_path
+            ]
         
         result = subprocess.run(cmd, capture_output=True, text=True)
         

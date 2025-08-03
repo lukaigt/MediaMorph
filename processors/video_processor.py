@@ -135,6 +135,49 @@ class VideoProcessor:
         # Final progress update
         self.update_progress(end_percent, f"Encoding completed successfully!")
         print(f"✅ Encoding completed successfully!")
+    
+    def _monitor_subprocess_progress(self, process, duration, start_percent, end_percent):
+        """Simplified progress monitoring using subprocess with -progress pipe"""
+        import re
+        import time
+        
+        print(f"🎬 Starting subprocess progress monitoring ({start_percent}% → {end_percent}%)")
+        
+        current_time = 0
+        last_update = time.time()
+        
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+                
+            if output and 'out_time_ms=' in output:
+                # Parse progress output from FFmpeg -progress pipe
+                time_match = re.search(r'out_time_ms=(\d+)', output)
+                if time_match:
+                    time_microseconds = int(time_match.group(1))
+                    current_time = time_microseconds / 1000000  # Convert to seconds
+                    
+                    if duration > 0:
+                        encoding_progress = (current_time / duration) * 100
+                        total_progress = start_percent + (encoding_progress / 100) * (end_percent - start_percent)
+                        total_progress = min(total_progress, end_percent)
+                        
+                        current_wall_time = time.time()
+                        if current_wall_time - last_update >= 0.5:  # Update every 0.5 seconds
+                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s"
+                            self.update_progress(int(total_progress), status_text)
+                            print(f"Progress: {int(total_progress)}% - {status_text}")
+                            last_update = current_wall_time
+        
+        # Wait for process completion
+        process.wait()
+        if process.returncode != 0:
+            raise Exception(f"FFmpeg encoding failed with code {process.returncode}")
+            
+        # Final progress update
+        self.update_progress(end_percent, f"Encoding completed successfully!")
+        print(f"✅ Encoding completed successfully!")
         
     def _smooth_progress_transition(self, from_percent, to_percent, steps=10, delay=0.1):
         """Create smooth progress transitions between major steps"""
@@ -610,27 +653,29 @@ class VideoProcessor:
                 duration = float(probe['format']['duration'])
                 print(f"Video duration: {duration:.2f} seconds")
                 
-                # Use progress tracking during encoding
+                # Build FFmpeg command for better progress tracking
+                import subprocess
+                
+                # Convert encoding params to command line arguments
+                cmd_args = []
+                for key, value in encoding_params.items():
+                    if key.startswith('metadata'):
+                        cmd_args.extend(['-metadata', f'{key.split(":")[-1]}={value}'])
+                    else:
+                        cmd_args.extend([f'-{key}', str(value)])
+                
                 if has_audio:
                     print("Encoding with audio preservation...")
-                    process = (
-                        ffmpeg
-                        .output(video, input_stream.audio, output_path, 
-                               acodec='copy', **encoding_params)
-                        .overwrite_output()
-                        .run_async(pipe_stderr=True)
-                    )
+                    cmd = ['ffmpeg', '-i', input_path, '-c:a', 'copy'] + cmd_args + ['-progress', 'pipe:1', '-y', output_path]
                 else:
                     print("Encoding video only...")
-                    process = (
-                        ffmpeg
-                        .output(video, output_path, **encoding_params)
-                        .overwrite_output()
-                        .run_async(pipe_stderr=True)
-                    )
+                    cmd = ['ffmpeg', '-i', input_path] + cmd_args + ['-progress', 'pipe:1', '-y', output_path]
+                
+                # Start subprocess with progress monitoring
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
                 
                 # Track real-time encoding progress
-                self._monitor_encoding_progress(process, duration, 85, 98)
+                self._monitor_subprocess_progress(process, duration, 85, 98)
                 
                 # VALIDATE OUTPUT QUALITY
                 self.update_progress(99, "Validating TikTok output quality...")
