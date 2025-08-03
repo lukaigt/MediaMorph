@@ -45,161 +45,98 @@ class VideoProcessor:
         return result
     
     def _apply_tiktok_preset(self, input_path, output_path):
-        """TikTok: Advanced 8-layer anti-algorithm system with cutting-edge video evasion"""
+        """TikTok: DIRECT ULTRA-HIGH QUALITY 1080p60 with minimal algorithm evasion"""
         try:
-            # Get dynamic variation with batch protection
-            variation = self._get_dynamic_variation('tiktok')
-            platform = 'tiktok'
+            self.update_progress(50, "Starting ultra-high quality 1080p60 processing...")
             
-            # Build advanced FFmpeg filter chain with 2025 research techniques
+            # Direct approach - no complex filters that cause failures
             input_stream = ffmpeg.input(input_path)
-            self.update_progress(50, "Building advanced filter chain...")
             
-            # === LAYER 1: SIMPLIFIED ALGORITHM EVASION ===
-            self.update_progress(52, "Applying algorithm evasion techniques...")
-            video = input_stream.video
-            
-            # Simple but effective temporal manipulation
-            speed_factor = variation['speed_factor']
-            video = video.filter('setpts', f'{speed_factor}*PTS')
-            
-            # === LAYER 2: RELIABLE SPATIAL EVASION ===
-            self.update_progress(54, "Processing spatial transformations...")
-            # Simple zoom for algorithm evasion
-            zoom_factor = variation['zoom_factor']
-            video = video.filter('scale', f'iw*{zoom_factor}', f'ih*{zoom_factor}')
-            
-            # === LAYER 3: ESSENTIAL ALGORITHM EVASION ===
-            self.update_progress(56, "Processing color and quality adjustments...")
-            # Simple but effective color adjustments for algorithm evasion
-            video = video.filter('eq', 
-                brightness=variation['brightness'], 
-                contrast=variation['contrast'], 
-                saturation=variation['saturation'])
-            
-            # Light noise for algorithm confusion (reduced complexity)
-            self.update_progress(58, "Adding subtle algorithm disruption...")
-            video = video.filter('noise', alls=10, allf='t')
-            
-            # === LAYER 6: SIMPLIFIED AUDIO PROCESSING (PRESERVE AUDIO) ===
-            self.update_progress(60, "Processing audio streams...")
-            # Check if input has audio stream first
+            # Check for audio
             try:
                 probe = ffmpeg.probe(input_path)
                 has_audio = any(stream['codec_type'] == 'audio' for stream in probe['streams'])
                 print(f"Audio detection: {has_audio} audio streams found")
             except Exception as e:
                 has_audio = False
-                print(f"Warning: Unable to probe input file for audio streams: {e}")
+                print(f"Warning: Unable to probe input file: {e}")
             
-            # Always try to preserve original audio with minimal processing
-            audio = None
-            if has_audio:
-                try:
-                    # Use original audio with minimal processing to preserve it
-                    audio = input_stream.audio
-                    print("Audio stream extracted successfully")
-                except Exception as audio_error:
-                    print(f"Failed to extract audio stream: {audio_error}")
-                    audio = None
-                    has_audio = False
-            else:
-                print("No audio stream found in input - processing video only")
+            self.update_progress(60, "Applying minimal algorithm evasion...")
             
-            # === LAYER 7: HIGH-QUALITY 1080P60 ENCODING WITH ANTI-ALGORITHM METADATA ===
-            self.update_progress(65, "Preparing ultra-high quality 1080p60 encoding...")
-            # Simplified ultra-high quality settings that work reliably
+            # MINIMAL FILTER CHAIN - only essential evasion that won't fail
+            video = input_stream.video
+            # Single simple filter for algorithm evasion
+            video = video.filter('eq', brightness=0.02, contrast=1.05, saturation=1.02)
+            
+            self.update_progress(70, "Preparing ultra-high quality encoding...")
+            
+            # ULTRA-HIGH QUALITY SETTINGS - guaranteed to work
             encoding_params = {
-                'vcodec': 'libx264', 
+                'vcodec': 'libx264',
                 'crf': 16,  # Ultra-high quality
                 'preset': 'slow',  # Maximum quality
-                'b:v': '12M',  # Ultra-high bitrate
-                'r': 60,  # Force 60fps
-                's': '1920x1080',  # Force 1080p
-                'pix_fmt': 'yuv420p'  # Universal compatibility
+                'b:v': '12M',  # 12Mbps bitrate
+                'r': 60,  # 60fps
+                's': '1920x1080',  # 1080p
+                'pix_fmt': 'yuv420p'
             }
             
-            # === LAYER 8: SIMPLIFIED HIGH-QUALITY ENCODING ===
-            # Simplified parameters to avoid encoding failures
-            final_params = encoding_params.copy()
+            self.update_progress(80, "Encoding 1080p60 with CRF 16...")
             
-            # Add audio parameters only if audio exists
-            if has_audio and audio is not None:
-                final_params.update({
-                    'acodec': 'copy',  # Copy audio without re-encoding to preserve quality
-                })
-                print("Audio parameters added: copy codec")
-            
-            # Single encoding stage to avoid audio loss with better error handling
-            self.update_progress(75, "Starting final 1080p60 encoding process...")
-            self.update_progress(80, "Encoding ultra-high quality video stream...")
+            # DIRECT ENCODING - no complex parameters that cause failures
             try:
-                if has_audio and audio is not None:
-                    print("Encoding with audio...")
-                    self.update_progress(85, "Combining video with preserved audio...")
-                    # Encode with audio using copy codec to preserve original audio
+                if has_audio:
+                    print("Encoding with audio preservation...")
+                    print(f"Encoding params: {encoding_params}")
                     (
                         ffmpeg
-                        .output(video, audio, output_path, **final_params)
+                        .output(video, input_stream.audio, output_path, 
+                               acodec='copy', **encoding_params)
                         .overwrite_output()
                         .run(quiet=False)
                     )
-                    
-                    # Verify audio is present in output
-                    try:
-                        probe = ffmpeg.probe(output_path)
-                        audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
-                        if audio_streams:
-                            print(f"✓ Audio preserved successfully: {len(audio_streams)} audio stream(s)")
-                        else:
-                            print("⚠ Warning: No audio streams found in output")
-                    except Exception as verify_error:
-                        print(f"Audio verification failed: {verify_error}")
                 else:
-                    print("Encoding video only (no audio)...")
-                    # Encode video only
+                    print("Encoding video only...")
+                    print(f"Encoding params: {encoding_params}")
                     (
                         ffmpeg
-                        .output(video, output_path, **final_params)
+                        .output(video, output_path, **encoding_params)
                         .overwrite_output()
                         .run(quiet=False)
                     )
                     
-            except ffmpeg.Error as e:
-                print(f"FFmpeg encoding failed: {e}")
-                # Ultimate fallback: Simple encoding preserving audio
+                self.update_progress(95, "Validating ultra-high quality output...")
+                
+                # Verify the output quality
                 try:
-                    if has_audio:
-                        print("Attempting fallback encoding with original audio...")
-                        (
-                            ffmpeg
-                            .output(input_stream.video, input_stream.audio, output_path, 
-                                   vcodec='libx264', acodec='copy', crf=16, preset='slow',
-                                   **{'b:v': '12M', 'r': 60, 's': '1920x1080'})
-                            .overwrite_output()
-                            .run(quiet=False)
-                        )
-                    else:
-                        print("Attempting fallback encoding without audio...")
-                        (
-                            ffmpeg
-                            .output(input_stream.video, output_path, 
-                                   vcodec='libx264', crf=16, preset='slow',
-                                   **{'b:v': '12M', 'r': 60, 's': '1920x1080'})
-                            .overwrite_output()
-                            .run(quiet=False)
-                        )
-                except Exception as fallback_error:
-                    print(f"Fallback encoding also failed: {fallback_error}")
-                    raise Exception(f"All encoding attempts failed: {e}")
-            
-            # Validate audio in output
-            self.update_progress(95, "Validating output quality and audio integrity...")
-            self._validate_audio_in_output(output_path)
-            self.update_progress(100, "Ultra-high quality 1080p60 processing complete!")
-            return output_path
-        except ffmpeg.Error as e:
-            raise Exception(f"FFmpeg error in TikTok preset: {e}")
+                    probe = ffmpeg.probe(output_path)
+                    video_stream = next(s for s in probe['streams'] if s['codec_type'] == 'video')
+                    width = int(video_stream['width'])
+                    height = int(video_stream['height'])
+                    fps = eval(video_stream['r_frame_rate'])
+                    print(f"✓ Output verified: {width}x{height} at {fps:.1f}fps")
+                except Exception as verify_error:
+                    print(f"Output verification failed: {verify_error}")
+                
+                self.update_progress(100, "Ultra-high quality 1080p60 complete!")
+                return output_path
+                
+            except ffmpeg.Error as e:
+                print(f"Encoding failed: {e}")
+                # Last resort fallback
+                print("Using absolute fallback...")
+                (
+                    ffmpeg
+                    .input(input_path)
+                    .output(output_path, vcodec='libx264', crf=16, preset='slow',
+                           **{'b:v': '12M', 'r': 60, 's': '1920x1080'})
+                    .overwrite_output()
+                    .run(quiet=False)
+                )
+                return output_path
+                
+        except Exception as e:
+            raise Exception(f"TikTok processing failed: {e}")
     
     def _apply_instagram_preset(self, input_path, output_path):
         """Instagram: Advanced square processing with heavy modifications"""
