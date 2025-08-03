@@ -70,7 +70,7 @@ class ImageProcessor:
         except Exception as e:
             raise Exception(f"Error in TikTok advanced preset: {e}")
     
-    def _apply_instagram_preset(self, input_path, output_path):
+    def _apply_instagram_preset_OLD_DEPRECATED(self, input_path, output_path):
         """Instagram: Advanced square processing with heavy algorithm evasion"""
         try:
             with Image.open(input_path) as img:

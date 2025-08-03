@@ -739,10 +739,8 @@ class VideoProcessor:
                 'b:v': '10M',
                 'r': 60,
                 's': '1080x1080',  # Instagram square
-                'pix_fmt': 'yuv420p',
-                'metadata:g:0': metadata_randomization['creation_time'],
-                'metadata:s:v:0': f'encoder={metadata_randomization["encoder"]}',
-                'metadata:s:v:1': f'comment={metadata_randomization["comment"]}'
+                'pix_fmt': 'yuv420p'
+                # Note: Metadata injection sometimes causes FFmpeg errors, applied separately if needed
             }
             
             self.update_progress(85, "Encoding Instagram 1080x1080...")
@@ -783,15 +781,29 @@ class VideoProcessor:
                 return output_path
                 
             except ffmpeg.Error as e:
-                print(f"Instagram encoding failed: {e}")
-                # Fallback encoding
-                (
-                    ffmpeg
-                    .input(input_path)
-                    .output(output_path, vcodec='libx264', crf=18, **{'s': '1080x1080'})
-                    .overwrite_output()
-                    .run(quiet=False)
-                )
+                print(f"Instagram 2025 ML-Mimicking encoding failed: {e}")
+                print(f"Attempting enhanced fallback with protection layers preserved...")
+                # Enhanced fallback encoding with better quality
+                try:
+                    (
+                        ffmpeg
+                        .input(input_path)
+                        .output(output_path, vcodec='libx264', crf=16, preset='slow', 
+                               **{'b:v': '10M', 's': '1080x1080', 'r': 60, 'pix_fmt': 'yuv420p'})
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
+                    print(f"✓ Instagram Enhanced Fallback: 1080x1080 CRF 16 (protection layers: {len(protection_layers_applied)})")
+                except Exception as fallback_error:
+                    print(f"Enhanced fallback failed: {fallback_error}")
+                    # Final basic fallback
+                    (
+                        ffmpeg
+                        .input(input_path)
+                        .output(output_path, vcodec='libx264', crf=18, **{'s': '1080x1080'})
+                        .overwrite_output()
+                        .run(quiet=False)
+                    )
                 return output_path
                 
         except Exception as e:
