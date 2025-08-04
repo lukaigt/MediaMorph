@@ -536,17 +536,25 @@ def _update_progress_display():
     
     # Show current session state progress for video encoding
     if hasattr(st.session_state, 'progress') and st.session_state.progress > 0:
-        display_content.append(f"**Video Encoding:** {st.session_state.progress}%")
+        display_content.append(f"**🎬 Video Encoding Progress: {st.session_state.progress}%**")
         
         # Create visual progress bar
-        progress_bar_width = 30
+        progress_bar_width = 25
         filled_width = int((st.session_state.progress / 100) * progress_bar_width)
         empty_width = progress_bar_width - filled_width
         progress_bar = "█" * filled_width + "░" * empty_width
         display_content.append(f"```\n[{progress_bar}] {st.session_state.progress}%\n```")
         
         if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
-            display_content.append(f"**Status:** {st.session_state.progress_text}")
+            display_content.append(f"**Current Status:** {st.session_state.progress_text}")
+            
+        # Show simplified ETA if available
+        if "ETA:" in str(getattr(st.session_state, 'progress_text', '')):
+            try:
+                eta = st.session_state.progress_text.split("ETA:")[-1].strip()
+                display_content.append(f"**⏱️ Time Remaining:** {eta}")
+            except:
+                pass
     
     display_content.append("\n**Processing Steps:**")
     
@@ -647,15 +655,24 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
                     # Parse ETA from status text if available
                     eta = None
                     if "ETA:" in status_text:
-                        eta_part = status_text.split("ETA:")[-1].strip()
-                        eta = eta_part
+                        try:
+                            eta_part = status_text.split("ETA:")[-1].strip()
+                            eta = eta_part
+                        except:
+                            eta = "Calculating..."
                     
                     # Update progress with detailed encoding information
-                    update_detailed_progress("Video Encoding", status_text, eta, percentage, 100)
-                    
-                    # Also update session state for immediate display
-                    st.session_state.progress = percentage
-                    st.session_state.progress_text = status_text
+                    try:
+                        update_detailed_progress("Video Encoding", status_text, eta, percentage, 100)
+                        
+                        # Also update session state for immediate display
+                        st.session_state.progress = percentage
+                        st.session_state.progress_text = status_text
+                    except Exception as e:
+                        print(f"Progress update error: {e}")
+                        # Basic fallback update
+                        st.session_state.progress = percentage
+                        st.session_state.progress_text = f"Encoding: {percentage}%"
                 
                 processor.set_progress_callback(video_progress_callback)
             
