@@ -146,6 +146,7 @@ class VideoProcessor:
         
         current_time = 0
         last_update = time.time()
+        process_start_time = time.time()  # Local start time for this specific process
         
         while True:
             output = process.stdout.readline()
@@ -165,8 +166,27 @@ class VideoProcessor:
                         total_progress = min(total_progress, end_percent)
                         
                         current_wall_time = time.time()
-                        if current_wall_time - last_update >= 0.5:  # Update every 0.5 seconds
-                            status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s"
+                        if current_wall_time - last_update >= 0.2:  # Update every 0.2 seconds for smoother progress
+                            # Calculate ETA based on encoding speed
+                            remaining_seconds = duration - current_time
+                            if current_time > 0:
+                                elapsed_wall_time = current_wall_time - process_start_time if hasattr(self, 'process_start_time') else 1
+                                if elapsed_wall_time > 0:
+                                    encoding_speed = current_time / elapsed_wall_time
+                                    if encoding_speed > 0:
+                                        eta_seconds = remaining_seconds / encoding_speed
+                                        if eta_seconds < 60:
+                                            eta_str = f"{eta_seconds:.0f}s"
+                                        else:
+                                            eta_str = f"{eta_seconds/60:.1f}m"
+                                        status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s - ETA: {eta_str}"
+                                    else:
+                                        status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s - Calculating ETA..."
+                                else:
+                                    status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s - Starting..."
+                            else:
+                                status_text = f"Encoding: {current_time:.1f}/{duration:.1f}s"
+                            
                             self.update_progress(int(total_progress), status_text)
                             print(f"Progress: {int(total_progress)}% - {status_text}")
                             last_update = current_wall_time

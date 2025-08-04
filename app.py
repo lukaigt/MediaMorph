@@ -160,7 +160,7 @@ def main():
             _update_progress_display()
             
             # Auto-refresh while processing
-            time.sleep(0.5)  # Regular updates
+            time.sleep(0.2)  # Faster updates for real-time progress
             st.rerun()
         
         # Platform preset buttons
@@ -366,8 +366,8 @@ def main():
             # Update display
             _update_progress_display()
             
-            # Auto-refresh while processing
-            time.sleep(0.1)
+            # Auto-refresh while processing - faster for video encoding
+            time.sleep(0.1)  # Very fast updates during processing
             st.rerun()
         
     # Batch processing results section
@@ -514,7 +514,7 @@ def update_detailed_progress(step_name, details, estimated_time_left=None, curre
         _update_progress_display()
 
 def _update_progress_display():
-    """Update the detailed progress display"""
+    """Update the detailed progress display with enhanced video encoding progress"""
     import time
     
     if not hasattr(st.session_state, 'detailed_progress') or not st.session_state.detailed_progress['steps']:
@@ -526,13 +526,29 @@ def _update_progress_display():
     
     # Build display content
     display_content = []
-    display_content.append("### 🔄 Processing Steps")
-    display_content.append(f"**Elapsed Time:** {elapsed_time:.1f}s")
+    display_content.append("### 🔄 Real-Time Processing Progress")
+    display_content.append(f"**Total Elapsed Time:** {elapsed_time:.1f}s")
     
+    # Show overall progress if available
     if progress_data['total_steps'] > 0:
-        display_content.append(f"**Progress:** Step {progress_data['current_step']}/{progress_data['total_steps']}")
+        overall_progress = (progress_data['current_step'] / progress_data['total_steps']) * 100
+        display_content.append(f"**Overall Progress:** {overall_progress:.1f}% (Step {progress_data['current_step']}/{progress_data['total_steps']})")
     
-    display_content.append("\n**Current Steps:**")
+    # Show current session state progress for video encoding
+    if hasattr(st.session_state, 'progress') and st.session_state.progress > 0:
+        display_content.append(f"**Video Encoding:** {st.session_state.progress}%")
+        
+        # Create visual progress bar
+        progress_bar_width = 30
+        filled_width = int((st.session_state.progress / 100) * progress_bar_width)
+        empty_width = progress_bar_width - filled_width
+        progress_bar = "█" * filled_width + "░" * empty_width
+        display_content.append(f"```\n[{progress_bar}] {st.session_state.progress}%\n```")
+        
+        if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
+            display_content.append(f"**Status:** {st.session_state.progress_text}")
+    
+    display_content.append("\n**Processing Steps:**")
     
     for i, step in enumerate(progress_data['steps'][-5:]):  # Show last 5 steps
         step_time = step['timestamp'] - progress_data['start_time']
@@ -546,7 +562,15 @@ def _update_progress_display():
             status = "✅"
         
         display_content.append(f"{status} **{step['name']}** {time_str}")
-        display_content.append(f"   └─ {step['details']}")
+        
+        # Show more detail for video encoding step
+        if step['name'] == "Video Encoding" and 'details' in step:
+            if "fps" in step['details'] and "ETA" in step['details']:
+                display_content.append(f"   └─ {step['details']}")
+            else:
+                display_content.append(f"   └─ {step['details']}")
+        else:
+            display_content.append(f"   └─ {step['details']}")
     
     # Update display
     if hasattr(st.session_state, 'progress_display') and st.session_state.progress_display is not None:
@@ -619,7 +643,21 @@ def process_media_preset(uploaded_file, platform, file_details, processors, opti
             if hasattr(processor, 'set_audio_quality'):
                 processor.set_audio_quality(options.get('audio_quality', '192k'))
             if hasattr(processor, 'set_progress_callback'):
-                processor.set_progress_callback(lambda p, t: update_detailed_progress("Video Processing", t, None, None, None))
+                def video_progress_callback(percentage, status_text):
+                    # Parse ETA from status text if available
+                    eta = None
+                    if "ETA:" in status_text:
+                        eta_part = status_text.split("ETA:")[-1].strip()
+                        eta = eta_part
+                    
+                    # Update progress with detailed encoding information
+                    update_detailed_progress("Video Encoding", status_text, eta, percentage, 100)
+                    
+                    # Also update session state for immediate display
+                    st.session_state.progress = percentage
+                    st.session_state.progress_text = status_text
+                
+                processor.set_progress_callback(video_progress_callback)
             
             output_path = processor.apply_preset(temp_input_path, platform)
         else:
