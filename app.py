@@ -526,7 +526,32 @@ def _update_progress_display():
     
     # Build display content
     display_content = []
-    display_content.append("### 🔄 Real-Time Processing Progress")
+    
+    # Check if we have time estimation data to show prominently at top
+    time_estimate_shown = False
+    if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
+        text = st.session_state.progress_text
+        if "→" in text and "Total time:" in text and "ETA:" in text:
+            try:
+                parts = text.split("→")
+                speed_part = parts[0].strip()
+                time_part = parts[1].strip()
+                
+                eta = time_part.split("ETA:")[-1].strip().rstrip(")")
+                total_time = time_part.split("Total time:")[-1].split("(")[0].strip()
+                
+                display_content.append("### ⏱️ TIME REMAINING")
+                display_content.append(f"# {eta}")
+                display_content.append(f"**Encoding Speed:** {speed_part}")
+                display_content.append(f"**Total Processing Time:** {total_time}")
+                display_content.append("")
+                time_estimate_shown = True
+            except:
+                pass
+    
+    if not time_estimate_shown:
+        display_content.append("### 🔄 Real-Time Processing Progress")
+    
     display_content.append(f"**Total Elapsed Time:** {elapsed_time:.1f}s")
     
     # Show overall progress if available
@@ -545,27 +570,32 @@ def _update_progress_display():
         progress_bar = "█" * filled_width + "░" * empty_width
         display_content.append(f"```\n[{progress_bar}] {st.session_state.progress}%\n```")
         
-        if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
-            display_content.append(f"**Current Status:** {st.session_state.progress_text}")
-            
-        # Show time estimate information
+        # Show time estimate prominently at the top
         if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
             text = st.session_state.progress_text
-            if "Total time:" in text and "ETA:" in text:
+            
+            # Look for the new time estimation format
+            if "→" in text and "Total time:" in text:
                 try:
-                    # Extract total time and ETA from status text
                     parts = text.split("→")
-                    if len(parts) >= 2:
-                        time_part = parts[0].strip()  # "Processed 15s in 8s"
-                        eta_part = parts[1].strip()   # "Total time: 42s (ETA: 30s)"
-                        
-                        display_content.append(f"**📊 Speed Analysis:** {time_part}")
-                        
-                        if "ETA:" in eta_part:
-                            eta = eta_part.split("ETA:")[-1].strip().rstrip(")")
-                            display_content.append(f"**⏱️ Time Remaining:** {eta}")
-                except:
-                    pass
+                    speed_part = parts[0].strip()  # "Processed 15s in 8s"
+                    time_part = parts[1].strip()   # "Total time: 42s (ETA: 30s)"
+                    
+                    display_content.append(f"")
+                    display_content.append(f"### ⏱️ TIME ESTIMATE")
+                    display_content.append(f"**Speed:** {speed_part}")
+                    
+                    if "ETA:" in time_part:
+                        eta = time_part.split("ETA:")[-1].strip().rstrip(")")
+                        total_time = time_part.split("Total time:")[-1].split("(")[0].strip()
+                        display_content.append(f"**Total Time Needed:** {total_time}")
+                        display_content.append(f"**Time Left:** {eta}")
+                    
+                    display_content.append(f"")
+                except Exception as e:
+                    display_content.append(f"**Status:** {text}")
+            else:
+                display_content.append(f"**Status:** {text}")
     
     display_content.append("\n**Processing Steps:**")
     
