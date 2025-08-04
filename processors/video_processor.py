@@ -968,8 +968,59 @@ class VideoProcessor:
                         .run_async(pipe_stderr=True)
                     )
                 
-                # Track real-time encoding progress
-                self._monitor_encoding_progress(process, duration, 85, 98)
+                # Track real-time encoding progress using simplified monitoring
+                print(f"🎬 Starting enhanced progress monitoring (85% → 98%)")
+                
+                # Read stderr output line by line for progress
+                import re
+                current_time = 0
+                last_update = time.time()
+                process_start_time = time.time()
+                
+                for line in iter(process.stderr.readline, b''):
+                    line = line.decode('utf-8').strip()
+                    
+                    # Parse FFmpeg time output
+                    time_match = re.search(r'time=(\d+):(\d+):(\d+)\.(\d+)', line)
+                    if time_match:
+                        hours = int(time_match.group(1))
+                        minutes = int(time_match.group(2))
+                        seconds = int(time_match.group(3))
+                        microseconds = int(time_match.group(4))
+                        current_time = hours * 3600 + minutes * 60 + seconds + microseconds / 100
+                        
+                        if duration > 0:
+                            encoding_progress = (current_time / duration) * 100
+                            total_progress = 85 + (encoding_progress / 100) * (98 - 85)
+                            total_progress = min(total_progress, 98)
+                            
+                            current_wall_time = time.time()
+                            if current_wall_time - last_update >= 1.0:  # Update every second
+                                elapsed_wall_time = current_wall_time - process_start_time
+                                
+                                if current_time >= 5 and elapsed_wall_time > 0:
+                                    # Calculate time estimation
+                                    seconds_per_video_second = elapsed_wall_time / current_time
+                                    total_estimated_time = duration * seconds_per_video_second
+                                    remaining_wall_time = total_estimated_time - elapsed_wall_time
+                                    
+                                    if remaining_wall_time < 60:
+                                        eta_str = f"{remaining_wall_time:.0f}s"
+                                    elif remaining_wall_time < 3600:
+                                        eta_str = f"{remaining_wall_time/60:.1f}m"
+                                    else:
+                                        eta_str = f"{remaining_wall_time/3600:.1f}h"
+                                    
+                                    status_text = f"Processed {current_time:.0f}s in {elapsed_wall_time:.0f}s → Total time: {total_estimated_time:.0f}s (ETA: {eta_str})"
+                                    self.update_progress(total_progress, status_text)
+                                    print(f"⏱️ {status_text}")
+                                    last_update = current_wall_time
+                
+                # Wait for process completion
+                process.wait()
+                if process.returncode != 0:
+                    stderr_output = process.stderr.read().decode('utf-8')
+                    raise Exception(f"FFmpeg encoding failed: {stderr_output}")
                 
                 # Validate output
                 self.update_progress(99, "Validating Instagram output...")
