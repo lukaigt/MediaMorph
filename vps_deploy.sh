@@ -1,96 +1,69 @@
 #!/bin/bash
-# VPS Deployment Script for MediaMorph
-# This will definitely work on Ubuntu VPS
+# Simple VPS Deployment Script 
+# Works on Ubuntu 20.04+ VPS
 
-echo "🚀 MediaMorph VPS Deployment Script"
-echo "=================================="
+echo "Smart Anti-Algorithm Repost Assistant - VPS Deploy"
+echo "=================================================="
 
-# Kill any existing processes
+# Kill existing processes
 echo "Stopping existing processes..."
-sudo pkill -f streamlit 2>/dev/null
-sudo pkill -f python 2>/dev/null
-sudo pkill -f mediamorph_simple 2>/dev/null
+pkill -f streamlit 2>/dev/null
+pkill -f "python.*app.py" 2>/dev/null
 
-# Check system
-echo "System check:"
-python3 --version
-which python3
+# Check if we're in the right directory
+if [ ! -f "app.py" ]; then
+    echo "ERROR: app.py not found. Make sure you're in the project directory."
+    exit 1
+fi
 
-# Navigate to project
-cd MediaMorph || { echo "ERROR: MediaMorph directory not found"; exit 1; }
-
-# Method 1: Try system packages first
+# System packages
 echo "Installing system packages..."
-sudo apt update -qq
-sudo apt install -y python3-pip python3-venv ffmpeg
+sudo apt update
+sudo apt install -y python3-pip ffmpeg
 
-# Method 2: Create clean virtual environment
-echo "Creating virtual environment..."
-rm -rf venv 2>/dev/null
-python3 -m venv venv
-source venv/bin/activate
-
-# Install packages in virtual environment
+# Install Python packages directly (no virtual env for simplicity)
 echo "Installing Python packages..."
-pip install --upgrade pip
-pip install streamlit==1.28.0 ffmpeg-python pillow numpy opencv-python scikit-image scipy
+pip3 install --user --upgrade pip
+pip3 install --user streamlit==1.28.0 ffmpeg-python pillow numpy opencv-python scikit-image scipy
 
-# Test imports
-echo "Testing imports..."
-python -c "
-import streamlit as st
-import ffmpeg
-import PIL
-import numpy
-import cv2
-import scipy
-print('✅ All imports successful')
+# Add user bin to PATH if not already there
+export PATH="$HOME/.local/bin:$PATH"
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+
+# Test installation
+echo "Testing installation..."
+python3 -c "
+try:
+    import streamlit, ffmpeg, PIL, numpy, cv2, scipy
+    print('All packages imported successfully')
+except ImportError as e:
+    print(f'Import error: {e}')
+    exit(1)
 "
 
-if [ $? -eq 0 ]; then
-    echo "✅ All dependencies installed successfully"
-    
-    # Create config
-    mkdir -p ~/.streamlit
-    cat > ~/.streamlit/config.toml << 'EOF'
+if [ $? -ne 0 ]; then
+    echo "Package installation failed. Trying system-wide..."
+    sudo pip3 install streamlit==1.28.0 ffmpeg-python pillow numpy opencv-python scikit-image scipy
+fi
+
+# Create streamlit config
+mkdir -p ~/.streamlit
+cat > ~/.streamlit/config.toml << 'EOF'
 [server]
 headless = true
 address = "0.0.0.0"
 port = 8447
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 1000
 
 [browser]
 gatherUsageStats = false
 EOF
 
-    echo "🚀 Starting MediaMorph..."
-    echo "Access at: http://your-vps-ip:8447"
-    streamlit run app.py --server.port 8447 --server.address 0.0.0.0
-    
-else
-    echo "❌ Import test failed - trying system-wide installation"
-    deactivate
-    
-    # Method 3: System-wide installation
-    sudo pip3 install streamlit==1.28.0 ffmpeg-python pillow numpy opencv-python scikit-image scipy
-    
-    # Test again
-    python3 -c "
-import streamlit as st
-import ffmpeg  
-import PIL
-import numpy
-import cv2
-import scipy
-print('✅ System-wide imports successful')
-"
-    
-    if [ $? -eq 0 ]; then
-        echo "🚀 Starting MediaMorph (system-wide)..."
-        python3 -m streamlit run app.py --server.port 8447 --server.address 0.0.0.0
-    else
-        echo "❌ All methods failed. Your VPS may have restrictions."
-        echo "Try Docker: sudo docker run -p 8447:8447 -v $(pwd):/app python:3.11 bash -c 'cd /app && pip install streamlit ffmpeg-python pillow numpy opencv-python scikit-image scipy && streamlit run app.py --server.port 8447 --server.address 0.0.0.0'"
-    fi
-fi
+echo "Starting application..."
+echo "Access at: http://your-vps-ip:8447"
+echo "Press Ctrl+C to stop"
+
+# Start streamlit
+streamlit run app.py --server.address 0.0.0.0 --server.port 8447

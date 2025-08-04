@@ -55,15 +55,15 @@ try:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                self.wfile.write(b"""
+                self.wfile.write("""
                 <html><body>
-                <h1>🔧 NETWORK TEST SUCCESS!</h1>
+                <h1>NETWORK TEST SUCCESS!</h1>
                 <p>Port 8447 is working from outside.</p>
                 <p>The issue is with streamlit, not your VPS network.</p>
                 <h2>Solution:</h2>
                 <p>Kill streamlit and restart with: <code>streamlit run app.py --server.address 0.0.0.0 --server.port 8447</code></p>
                 </body></html>
-                """)
+                """.encode('utf-8'))
             def log_message(self, format, *args):
                 pass
         
