@@ -155,11 +155,11 @@ class VideoProcessor:
         process_start_time = time.time()  # Local start time for this specific process
         
         while True:
-            output = process.stdout.readline()
+            output = process.stderr.readline()
             if output == '' and process.poll() is not None:
                 break
                 
-            if output and 'out_time_ms=' in output:
+            if output and ('out_time_ms=' in output or 'time=' in output):
                 # Parse progress output from FFmpeg -progress pipe
                 time_match = re.search(r'out_time_ms=(\d+)', output)
                 if time_match:
@@ -695,10 +695,10 @@ class VideoProcessor:
                 
                 if has_audio:
                     print("Encoding with audio preservation...")
-                    cmd = ['ffmpeg', '-i', input_path, '-c:a', 'copy'] + cmd_args + ['-progress', 'pipe:1', '-y', output_path]
+                    cmd = ['ffmpeg', '-i', input_path, '-c:a', 'copy'] + cmd_args + ['-progress', 'pipe:2', '-y', output_path]
                 else:
                     print("Encoding video only...")
-                    cmd = ['ffmpeg', '-i', input_path] + cmd_args + ['-progress', 'pipe:1', '-y', output_path]
+                    cmd = ['ffmpeg', '-i', input_path] + cmd_args + ['-progress', 'pipe:2', '-y', output_path]
                 
                 # Start subprocess with progress monitoring
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
