@@ -173,27 +173,25 @@ class VideoProcessor:
                         
                         current_wall_time = time.time()
                         if current_wall_time - last_update >= 0.2:  # Update every 0.2 seconds for smoother progress
-                            # Calculate ETA based on encoding speed
-                            remaining_seconds = duration - current_time
-                            if current_time > 5:  # Only calculate ETA after 5 seconds for accuracy
-                                elapsed_wall_time = current_wall_time - process_start_time
-                                if elapsed_wall_time > 0:
-                                    encoding_speed = current_time / elapsed_wall_time
-                                    if encoding_speed > 0:
-                                        eta_seconds = remaining_seconds / encoding_speed
-                                        if eta_seconds < 60:
-                                            eta_str = f"{eta_seconds:.0f}s"
-                                        elif eta_seconds < 3600:
-                                            eta_str = f"{eta_seconds/60:.1f}m"
-                                        else:
-                                            eta_str = f"{eta_seconds/3600:.1f}h"
-                                        status_text = f"Encoding {current_time:.1f}/{duration:.1f}s - ETA: {eta_str}"
-                                    else:
-                                        status_text = f"Encoding {current_time:.1f}/{duration:.1f}s - Calculating..."
+                            # Simple time estimation based on actual encoding speed
+                            elapsed_wall_time = current_wall_time - process_start_time
+                            
+                            if current_time >= 5 and elapsed_wall_time > 0:
+                                # Calculate how long it took to encode current_time seconds
+                                seconds_per_video_second = elapsed_wall_time / current_time
+                                total_estimated_time = duration * seconds_per_video_second
+                                remaining_wall_time = total_estimated_time - elapsed_wall_time
+                                
+                                if remaining_wall_time < 60:
+                                    eta_str = f"{remaining_wall_time:.0f}s"
+                                elif remaining_wall_time < 3600:
+                                    eta_str = f"{remaining_wall_time/60:.1f}m"
                                 else:
-                                    status_text = f"Encoding {current_time:.1f}/{duration:.1f}s - Processing..."
+                                    eta_str = f"{remaining_wall_time/3600:.1f}h"
+                                
+                                status_text = f"Processed {current_time:.0f}s in {elapsed_wall_time:.0f}s → Total time: {total_estimated_time:.0f}s (ETA: {eta_str})"
                             else:
-                                status_text = f"Encoding {current_time:.1f}/{duration:.1f}s - Starting..."
+                                status_text = f"Encoding {current_time:.1f}/{duration:.1f}s - Measuring speed..."
                             
                             self.update_progress(int(total_progress), status_text)
                             print(f"Progress: {int(total_progress)}% - {status_text}")

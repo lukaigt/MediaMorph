@@ -548,13 +548,24 @@ def _update_progress_display():
         if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
             display_content.append(f"**Current Status:** {st.session_state.progress_text}")
             
-        # Show simplified ETA if available
-        if "ETA:" in str(getattr(st.session_state, 'progress_text', '')):
-            try:
-                eta = st.session_state.progress_text.split("ETA:")[-1].strip()
-                display_content.append(f"**⏱️ Time Remaining:** {eta}")
-            except:
-                pass
+        # Show time estimate information
+        if hasattr(st.session_state, 'progress_text') and st.session_state.progress_text:
+            text = st.session_state.progress_text
+            if "Total time:" in text and "ETA:" in text:
+                try:
+                    # Extract total time and ETA from status text
+                    parts = text.split("→")
+                    if len(parts) >= 2:
+                        time_part = parts[0].strip()  # "Processed 15s in 8s"
+                        eta_part = parts[1].strip()   # "Total time: 42s (ETA: 30s)"
+                        
+                        display_content.append(f"**📊 Speed Analysis:** {time_part}")
+                        
+                        if "ETA:" in eta_part:
+                            eta = eta_part.split("ETA:")[-1].strip().rstrip(")")
+                            display_content.append(f"**⏱️ Time Remaining:** {eta}")
+                except:
+                    pass
     
     display_content.append("\n**Processing Steps:**")
     
