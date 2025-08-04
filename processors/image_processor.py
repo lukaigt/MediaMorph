@@ -5,9 +5,11 @@ import tempfile
 import os
 from pathlib import Path
 import numpy as np
+from numpy.typing import NDArray
 import random
 import time
 import datetime
+from typing import Any
 
 class ImageProcessor:
     def __init__(self):
@@ -431,26 +433,29 @@ class ImageProcessor:
     
     def _apply_dct_domain_modifications(self, img):
         """Apply discrete cosine transform domain modifications"""
-        img_array = np.array(img)
+        img_array: NDArray[Any] = np.array(img)
         height, width, channels = img_array.shape
         
         # Process in 8x8 blocks like JPEG compression
         for i in range(0, height - 8, 8):
             for j in range(0, width - 8, 8):
                 for c in range(channels):
-                    block = img_array[i:i+8, j:j+8, c].astype(np.float32)
+                    block: NDArray[Any] = img_array[i:i+8, j:j+8, c].astype(np.float32)
                     
                     # Apply DCT
                     from scipy.fft import dctn, idctn
-                    dct_block = dctn(block, norm='ortho')
+                    dct_block: NDArray[Any] = np.asarray(dctn(block, norm='ortho'))
                     
                     # Modify high-frequency coefficients slightly
                     if np.random.random() > 0.6:
-                        dct_block[6:8, 6:8] += np.random.uniform(-0.5, 0.5, (2, 2))
+                        noise: NDArray[Any] = np.random.uniform(-0.5, 0.5, (2, 2))
+                        high_freq_slice = dct_block[6:8, 6:8]
+                        dct_block[6:8, 6:8] = high_freq_slice + noise
                     
                     # Apply inverse DCT
-                    modified_block = idctn(dct_block, norm='ortho')
-                    img_array[i:i+8, j:j+8, c] = np.clip(modified_block, 0, 255)
+                    modified_block: NDArray[Any] = np.asarray(idctn(dct_block, norm='ortho'))
+                    clipped_block: NDArray[Any] = np.clip(modified_block, 0, 255)
+                    img_array[i:i+8, j:j+8, c] = clipped_block
         
         return Image.fromarray(img_array.astype(np.uint8))
     
@@ -943,7 +948,7 @@ class ImageProcessor:
     
     def _apply_hybrid_dct_manipulation(self, img, variation):
         """Apply hybrid DCT + GAN inspired frequency domain manipulation"""
-        img_array = np.array(img)
+        img_array: NDArray[Any] = np.array(img)
         height, width, channels = img_array.shape
         
         # Process in DCT domain (8x8 blocks like JPEG)
@@ -952,39 +957,52 @@ class ImageProcessor:
         # Pad image to ensure divisibility by 8
         pad_h = (8 - height % 8) % 8
         pad_w = (8 - width % 8) % 8
-        padded_img = np.pad(img_array, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
+        padded_img: NDArray[Any] = np.pad(img_array, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
         new_height, new_width = padded_img.shape[:2]
         
         for c in range(channels):
-            channel = padded_img[:, :, c].astype(np.float32)
+            channel: NDArray[Any] = padded_img[:, :, c].astype(np.float32)
             
             # Process in 8x8 DCT blocks
             for i in range(0, new_height - 7, 8):
                 for j in range(0, new_width - 7, 8):
-                    block = channel[i:i+8, j:j+8]
+                    block: NDArray[Any] = channel[i:i+8, j:j+8]
                     
                     # Apply DCT
-                    dct_block = dctn(block, norm='ortho')
+                    dct_block: NDArray[Any] = np.asarray(dctn(block, norm='ortho'))
                     
                     # Frequency band manipulation based on variation
                     if variation['frequency_bands'] == 'low':
                         # Modify low frequency coefficients
-                        dct_block[0:3, 0:3] += np.random.uniform(-0.5, 0.5, (3, 3)) * variation['intensity']
+                        noise: NDArray[Any] = np.random.uniform(-0.5, 0.5, (3, 3)) * variation['intensity']
+                        low_freq_slice = dct_block[0:3, 0:3]
+                        dct_block[0:3, 0:3] = low_freq_slice + noise
                     elif variation['frequency_bands'] == 'mid':
                         # Modify mid frequency coefficients
-                        dct_block[2:6, 2:6] += np.random.uniform(-0.8, 0.8, (4, 4)) * variation['intensity']
+                        noise: NDArray[Any] = np.random.uniform(-0.8, 0.8, (4, 4)) * variation['intensity']
+                        mid_freq_slice = dct_block[2:6, 2:6]
+                        dct_block[2:6, 2:6] = mid_freq_slice + noise
                     elif variation['frequency_bands'] == 'high':
                         # Modify high frequency coefficients
-                        dct_block[5:8, 5:8] += np.random.uniform(-1.2, 1.2, (3, 3)) * variation['intensity']
+                        noise: NDArray[Any] = np.random.uniform(-1.2, 1.2, (3, 3)) * variation['intensity']
+                        high_freq_slice = dct_block[5:8, 5:8]
+                        dct_block[5:8, 5:8] = high_freq_slice + noise
                     else:  # mixed
                         # Modify across all bands with different weights
-                        dct_block[0:3, 0:3] += np.random.uniform(-0.3, 0.3, (3, 3)) * variation['intensity']
-                        dct_block[3:6, 3:6] += np.random.uniform(-0.6, 0.6, (3, 3)) * variation['intensity']
-                        dct_block[6:8, 6:8] += np.random.uniform(-0.9, 0.9, (2, 2)) * variation['intensity']
+                        noise_low: NDArray[Any] = np.random.uniform(-0.3, 0.3, (3, 3)) * variation['intensity']
+                        noise_mid: NDArray[Any] = np.random.uniform(-0.6, 0.6, (3, 3)) * variation['intensity']
+                        noise_high: NDArray[Any] = np.random.uniform(-0.9, 0.9, (2, 2)) * variation['intensity']
+                        low_slice = dct_block[0:3, 0:3]
+                        mid_slice = dct_block[3:6, 3:6]
+                        high_slice = dct_block[6:8, 6:8]
+                        dct_block[0:3, 0:3] = low_slice + noise_low
+                        dct_block[3:6, 3:6] = mid_slice + noise_mid
+                        dct_block[6:8, 6:8] = high_slice + noise_high
                     
                     # Apply inverse DCT
-                    modified_block = idctn(dct_block, norm='ortho')
-                    channel[i:i+8, j:j+8] = np.clip(modified_block, 0, 255)
+                    modified_block: NDArray[Any] = np.asarray(idctn(dct_block, norm='ortho'))
+                    clipped_block: NDArray[Any] = np.clip(modified_block, 0, 255)
+                    channel[i:i+8, j:j+8] = clipped_block
             
             padded_img[:, :, c] = channel
         
